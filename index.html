@@ -3,21 +3,23 @@
     <link rel="stylesheet" type="text/css" href="image.css">
   </head>
   <body>
-    <svg id="image" xmlns="http://www.w3.org/2000/svg" version="1.1" width="221mm" height="331mm" viewBox="-0.5 -0.5 221 331">
+    <!--<svg id="image" xmlns="http://www.w3.org/2000/svg" version="1.1" width="221mm" height="331mm" viewbox="-0.5 -0.5 221 331">
       <rect class="bg" x="0" y="0" width="220" height="330" />
-      <g id="decadeOffset">
+      <g id="decadeoffset">
         <g id="decades" />
         <g id="centuries" />
-        <g id="figureRegion" transform="translate(60, 0)">
+        <g id="figureregion" transform="translate(60, 0)">
           <g id="figures" />
           <rect id="future" class="future" x="0" y="0" width="220" height="0">
         </g>
       </g>
       <rect class="border" x="0" y="0" width="220" height="330" />
-    </svg>
+      </svg>-->
     <script src="image.js"></script>
     <script>
-      var barEl = buildBarEl('frankId', 'Frank Longbottom', 200, 'green');
+      var bodyTag = document.getElementsByTagName("BODY")[0];
+      var image = new Image(221, 331, bodyTag);
+      /*var barEl = buildBarEl('frankId', 'Frank Longbottom', 200, 'green');
       var figuresEl = document.getElementById("figures");
       figuresEl.appendChild(barEl);
 
@@ -25,7 +27,7 @@
 
       addCenturyEl(2000, 330);
 
-      setFutureHeight();
+      setFutureHeight();*/
     </script>
   </body>
 </html>

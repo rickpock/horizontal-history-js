@@ -1,3 +1,146 @@
+function Image(width, height, parentEl) {
+
+  // Initialize member variables
+  
+  this.outerWidth = width;
+  this.outerHeight = height;
+  this.width = width - 1;
+  this.height = height - 1;
+
+  // Helper methods
+
+  /*
+  * Determines the decade in which a year belongs.
+  * A decade is defined as an integer of all the digits in a year except the one's digit.
+  * For example, the decade for 1945 is 194.
+  * 
+  * yr: Required. The year.
+  * 
+  * Returns: The decade containing 'yr'.
+  */
+  getDecadeForYr = function (yr) {
+    return Math.floor(yr / 10);
+  }
+
+  // Constants
+
+  const curYr = new Date().getFullYear();
+  const curDecade = getDecadeForYr(curYr);
+  
+  const decadeHeight = 30;
+  const decadeWidth = 60;
+
+  /*
+  Generically generates an xml element.
+  This is designed to be used to create elements to add to the svg.
+  The element is _not_ added to any DOM by this function.
+  
+  name: Required. Tag name for the new element.
+  attr: Required. An JS object of attribute values to be added to the element.
+  id:   Optional. The element's id attribute.
+  
+  Returns a reference to the element.
+  */
+  buildEl = function (name, attrs, id) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (var key in attrs) {
+      el.setAttribute(key, attrs[key]);
+    }
+  
+    if (id !== undefined) el.setAttribute('id', id);
+  
+    return el;
+  }
+
+  // Initialize the svg element
+  //
+  // The result should look like:
+  //
+  //  <svg id="image" xmlns="http://www.w3.org/2000/svg" version="1.1" width="221mm" height="331mm" viewbox="-0.5 -0.5 221 331">
+  //    <rect class="bg" x="0" y="0" width="220" height="330" />
+  //    <g id="decadeoffset">
+  //      <g id="decades" />
+  //      <g id="centuries" />
+  //      <g id="figureregion" transform="translate(60, 0)">
+  //        <g id="figures" />
+  //        <rect id="future" class="future" x="0" y="0" width="220" height="0">
+  //      </g>
+  //    </g>
+  //    <rect class="border" x="0" y="0" width="220" height="330" />
+  //  </svg>
+
+  this.initSvg = function () {
+    // Root svg element
+    this.svgEl = buildEl("svg", {
+      'version': '1.1',
+      'width': width,
+      'height': height,
+      'viewbox': '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight
+    }, 'image');
+  
+    // Background rectangle element
+    this.bgEl = buildEl('rect', {
+      'class': 'bg',
+      'x': 0, 'y': 0,
+      'width': this.width, 'height': this.height
+    }, 'bg');
+  
+    this.svgEl.appendChild(this.bgEl);
+    
+    // DecadeOffset grouping element
+    this.decadeOffsetEl = buildEl('g', {}, 'decadeOffset');
+    this.svgEl.appendChild(this.decadeOffsetEl);
+  
+    // Decades grouping element
+    this.decadesEl = buildEl('g', {}, 'decades');
+    this.decadeOffsetEl.appendChild(this.decadesEl);
+  
+    // Centuries grouping element
+    this.centuriesEl = buildEl('g', {}, 'centuries');
+    this.decadeOffsetEl.appendChild(this.centuriesEl);
+  
+    // FigureRegion grouping element
+    this.figureRegionEl = buildEl('g', {
+      'transform': 'translate(' + decadeWidth + ', 0)'
+    }, 'figureRegion');
+    this.decadeOffsetEl.appendChild(this.figureRegionEl);
+  
+    // Figures grouping element
+    this.figuresEl = buildEl('g', {}, 'figures');
+    this.figureRegionEl.appendChild(this.figuresEl);
+  
+    // Future rectangle element
+    var yrsIntoDecade = curYr - (curDecade * 10);
+    var yrsLeftInDecade = 10 - yrsIntoDecade;
+  
+    this.futureEl = buildEl('rect', {
+      'class': 'future',
+      'x': 0, 'y': 0,
+      'width': width - decadeWidth, 'height': yrsLeftInDecade * decadeHeight / 10
+    }, 'future');
+    this.figureRegionEl.appendChild(this.futureEl);
+  
+    // Border rectangle element
+    this.borderEl = buildEl('rect', {
+      'class': 'border',
+      'x': 0, 'y': 0,
+      'width': width, 'height': height
+    });
+    this.svgEl.appendChild(this.borderEl);
+  }
+
+  this.initSvg();
+
+
+  // If parentEl is passed in, automatically add the svg element to it as a child
+  if (parentEl !== undefined) {
+    parentEl.appendChild(this.svgEl);
+  }
+}
+
+
+// Pure element-generation methods
+
 /*
 Generically generates an xml element.
 This is designed to be used to create elements to add to the svg.
@@ -9,36 +152,16 @@ id:   Optional. The element's id attribute.
 
 Returns a reference to the element.
 */
-function buildEl(name, attrs, id) {
-  var el = document.createElementNS("http://www.w3.org/2000/svg", name);
-  for (var key in attrs) {
-    el.setAttribute(key, attrs[key]);
-  }
-
-  if (id !== undefined) el.setAttribute('id', id);
-
-  return el;
-}
-
-/*
-Determines the decade in which a year belongs.
-A decade is defined as an integer of all the digits in a year except the one's digit.
-For example, the decade for 1945 is 194.
-
-yr: Required. The year.
-
-Returns: The decade containing 'yr'.
-*/
-function getDecadeForYr(yr) {
-  return Math.floor(yr / 10);
-}
-
-// "Constants"
-var curYr = new Date().getFullYear();
-var curDecade = getDecadeForYr(curYr);
-
-var decadeHeight = 30;
-var decadeWidth = 60;
+//Image.buildEl = function (name, attrs, id) {
+//  var el = document.createElementNS("http://www.w3.org/2000/svg", name);
+//  for (var key in attrs) {
+//    el.setAttribute(key, attrs[key]);
+//  }
+//
+//  if (id !== undefined) el.setAttribute('id', id);
+//
+//  return el;
+//}
 
 /*
 Generates the svg xml element tree used to render a decade label.
@@ -48,7 +171,7 @@ decadeYr: Required. A year in the decade for which we want a label.
 
 Returns: An svg xml element tree.
 */
-function buildDecadeEl(decadeYr) {
+Image.buildDecadeEl = function (decadeYr) {
   var decade = getDecadeForYr(decadeYr)
 
   // Figure out the offset from the current decade (top of the image)
@@ -82,63 +205,6 @@ function buildDecadeEl(decadeYr) {
 }
 
 /*
-Adds decade labels to the svg DOM.
-
-Side Effect: Mutates the DOM of the element with id 'decades'.
-
-startYr: The earliest year that needs a decade label.
-endYr:   The latest year that needs a decade label.
-
-Returns: Nothing.
-*/
-function addDecadeEls(startYr, endYr) {
-  // Determine the earliest and latest decades
-  var startDecade = getDecadeForYr(startYr);
-  var endDecade = getDecadeForYr(endYr);
-
-  // Generate all decade labels and add them to the DOM
-  var decadesEl = document.getElementById("decades");
-  for (var decade = startDecade; decade <= endDecade; decade++) {
-    var decadeEl = buildDecadeEl(decade * 10);
-
-    decadesEl.appendChild(decadeEl);
-  }
-
-  // Shift all elements up based on the end decade
-  var offsetY = (endDecade - curDecade) * decadeHeight;
-
-  var decadeOffsetEl = document.getElementById("decadeOffset");
-  decadeOffsetEl.setAttribute("transform", "translate(0, " + offsetY + ")");
-}
-
-/*
-Adds century boundary markers to the svg DOM.
-
-Side Effect: Mutates the DOM of the element with id 'centuries'.
-
-centuryYr: The year where a century transition occurs.
-width:     How wide to draw the century boundary marker.
-
-Returns: Nothing.
-*/
-function addCenturyEl(centuryYr, width) {
-  // Determine the decade where the century transition occurs
-  centuryDecade = getDecadeForYr(centuryYr);
-
-  // Figure out the offset from the current decade (top of the image)
-  var y = (curDecade - centuryDecade + 1) * decadeHeight;
-
-  // Generate the century boundary marker element
-  var pathAttrs = {
-    'class': 'centuryBoundary',
-    'd': 'M 0 ' + y + ' L ' + width + ' ' + y,
-  };
-  var pathEl = buildEl('path', pathAttrs);
-  var centuriesEl = document.getElementById('centuries');
-  centuriesEl.appendChild(pathEl);
-}
-
-/*
 Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
 The element is _not_ added to any DOM by this function.
 
@@ -151,7 +217,7 @@ y:      Vertical offset from the top of the 'figures' region.
 
 Returns: An svg xml element tree.
 */
-function buildBarEl(id, name, height, color, x, y) {
+Image.buildBarEl = function (id, name, height, color, x, y) {
   var width = 30; // TODO: define as constant
 
   // Generate the "root" element of the bar svg xml
@@ -195,19 +261,61 @@ function buildBarEl(id, name, height, color, x, y) {
   return barEl;
 }
 
-/*
-Sets the height of the bar graying out the future.
+// Side-effect element generation methods
 
-Side Effect: Mutates the DOM of the element with id 'future'.
+/*
+Adds decade labels to the svg DOM.
+
+Side Effect: Mutates the DOM of the element with id 'decades'.
+
+startYr: The earliest year that needs a decade label.
+endYr:   The latest year that needs a decade label.
 
 Returns: Nothing.
 */
-function setFutureHeight() {
-  // Determine how many years of height the future area should cover
-  var yrsIntoDecade = curYr - (curDecade * 10);
-  var yrsLeftInDecade = 10 - yrsIntoDecade;
+Image.addDecadeEls = function (startYr, endYr) {
+  // Determine the earliest and latest decades
+  var startDecade = getDecadeForYr(startYr);
+  var endDecade = getDecadeForYr(endYr);
 
-  // Modify the height of the 'future' element
-  var futureEl = document.getElementById("future");
-  futureEl.setAttribute("height", yrsLeftInDecade * decadeHeight / 10);
+  // Generate all decade labels and add them to the DOM
+  var decadesEl = document.getElementById("decades");
+  for (var decade = startDecade; decade <= endDecade; decade++) {
+    var decadeEl = buildDecadeEl(decade * 10);
+
+    decadesEl.appendChild(decadeEl);
+  }
+
+  // Shift all elements up based on the end decade
+  var offsetY = (endDecade - curDecade) * decadeHeight;
+
+  var decadeOffsetEl = document.getElementById("decadeOffset");
+  decadeOffsetEl.setAttribute("transform", "translate(0, " + offsetY + ")");
+}
+
+/*
+Adds century boundary markers to the svg DOM.
+
+Side Effect: Mutates the DOM of the element with id 'centuries'.
+
+centuryYr: The year where a century transition occurs.
+width:     How wide to draw the century boundary marker.
+
+Returns: Nothing.
+*/
+Image.addCenturyEl = function (centuryYr, width) {
+  // Determine the decade where the century transition occurs
+  centuryDecade = getDecadeForYr(centuryYr);
+
+  // Figure out the offset from the current decade (top of the image)
+  var y = (curDecade - centuryDecade + 1) * decadeHeight;
+
+  // Generate the century boundary marker element
+  var pathAttrs = {
+    'class': 'centuryBoundary',
+    'd': 'M 0 ' + y + ' L ' + width + ' ' + y,
+  };
+  var pathEl = buildEl('path', pathAttrs);
+  var centuriesEl = document.getElementById('centuries');
+  centuriesEl.appendChild(pathEl);
 }
