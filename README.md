@@ -1,4 +1,4 @@
-# horizontal-history
+# horizontal-history-js
 A history visualization webapp used to chart the lifetimes of historical figures.
 
 # What is it?
