@@ -3,22 +3,11 @@
     <link rel="stylesheet" type="text/css" href="image.css">
   </head>
   <body>
-    <!--<svg id="image" xmlns="http://www.w3.org/2000/svg" version="1.1" width="221mm" height="331mm" viewbox="-0.5 -0.5 221 331">
-      <rect class="bg" x="0" y="0" width="220" height="330" />
-      <g id="decadeoffset">
-        <g id="decades" />
-        <g id="centuries" />
-        <g id="figureregion" transform="translate(60, 0)">
-          <g id="figures" />
-          <rect id="future" class="future" x="0" y="0" width="220" height="0">
-        </g>
-      </g>
-      <rect class="border" x="0" y="0" width="220" height="330" />
-      </svg>-->
     <script src="image.js"></script>
     <script>
       var bodyTag = document.getElementsByTagName("BODY")[0];
-      var image = new Image(221, 331, bodyTag);
+      var image = new Image(221, 381, bodyTag);
+      image.addBarEl('frankId', 'Frank Longbottom', 200, 'green');
       /*var barEl = buildBarEl('frankId', 'Frank Longbottom', 200, 'green');
       var figuresEl = document.getElementById("figures");
       figuresEl.appendChild(barEl);
