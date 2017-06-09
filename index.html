@@ -4,15 +4,35 @@
     <script src="image.js"></script>
     <script>
       window.onload = function () {
-        var bodyTag = document.getElementById('imageDiv');
-        window.image = new Image(221, 381, bodyTag);
-      }
+        var imageParentEl = document.getElementById('imageDiv');
+        window.image = new Image(221, 381, imageParentEl);
+
+        var curColIdx = 0
+        addBarFormEl = document.getElementById('addBarForm');
+        addBarFormEl.onsubmit = function () {
+          var name = addBarFormEl.figureName.value;
+          var startYr = parseInt(addBarFormEl.startYr.value);
+          var endYrStr = addBarFormEl.endYr.value;
+          var endYr = null;
+          if (endYrStr != "") {
+            endYr = parseInt(endYrStr);
+          }
+          window.image.addBarEl('el' + curColIdx, name, startYr, endYr, 'lightblue', curColIdx);
+          curColIdx++;
+        };
+      };
     </script>
   </head>
   <body>
     <div id="imageDiv"></div>
-    <p>
-    <form onsubmit="window.image.addBarEl('BobId', 'Bob Letterbacher', 1904, 1980, 'blue', 0);" action="javascript:void(0);">
+    <br />
+    <form id="addBarForm" action="javascript:void(0);">
+      Name: <input id="figureName" type="text" />
+      <br />
+      Start Year: <input id="startYr" type="text" />
+      <br />
+      End Year: <input id="endYr" type="text" />
+      <br />
       <input type="submit" value="Add Bar" />
     </form>
   </body>
