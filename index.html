@@ -1,13 +1,19 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="image.css">
-  </head>
-  <body>
     <script src="image.js"></script>
     <script>
-      var bodyTag = document.getElementsByTagName("BODY")[0];
-      var image = new Image(221, 381, bodyTag);
-      image.addBarEl('frankId', 'Frank Longbottom', 200, 'green');
+      window.onload = function () {
+        var bodyTag = document.getElementById('imageDiv');
+        window.image = new Image(221, 381, bodyTag);
+      }
     </script>
+  </head>
+  <body>
+    <div id="imageDiv"></div>
+    <p>
+    <form onsubmit="window.image.addBarEl('BobId', 'Bob Letterbacher', 288, 'blue');" action="javascript:void(0);">
+      <input type="submit" value="Add Bar" />
+    </form>
   </body>
 </html>
