@@ -52,6 +52,8 @@ function Image(width, height, parentEl) {
   const decadeHeight = 30;
   const decadeWidth = 60;
 
+  const colWidth = 30;
+
   // Methods for labels and other meta content
 
   /*
@@ -181,8 +183,6 @@ function Image(width, height, parentEl) {
   * Returns: An svg xml element tree.
   */
   this.addBarEl = function (id, name, height, color, x, y) {
-    var width = 30; // TODO: define as constant
-  
     // Generate the "root" element of the bar svg xml
     var figureAttrs = {};
     if (x !== undefined && y !== undefined) {
@@ -191,7 +191,7 @@ function Image(width, height, parentEl) {
     var barEl = buildEl('g', figureAttrs, id);
   
     // Generate the grouping element used to apply the rotation tranformation
-    var halfWidth = width / 2;
+    var halfWidth = colWidth / 2;
     var halfHeight = height / 2;
     var groupingTransforms = [
       "translate(" + halfWidth + ", " + -halfHeight + ")",
@@ -206,7 +206,7 @@ function Image(width, height, parentEl) {
     var rectAttrs = {
       'class': 'bar',
       'x': 0, 'y': 0,
-      'width': height, 'height': width, // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+      'width': height, 'height': colWidth, // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
       'fill': color
     };
     var rectEl = buildEl('rect', rectAttrs);
@@ -317,64 +317,4 @@ function Image(width, height, parentEl) {
   if (parentEl !== undefined) {
     parentEl.appendChild(this.svgEl);
   }
-}
-
-
-// Pure element-generation methods
-
-/*
-* Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
-* The element is _not_ added to any DOM by this function.
-* 
-* id:     ID to apply to the element.
-* name:   The historical figure's name to draw on the bar.
-* height: Bar height.
-* color:  Bar background color.
-* x:      Horizontal offset from the left of the 'figures' region.
-* y:      Vertical offset from the top of the 'figures' region.
-* 
-* Returns: An svg xml element tree.
-*/
-Image.buildBarEl = function (id, name, height, color, x, y) {
-  var width = 30; // TODO: define as constant
-
-  // Generate the "root" element of the bar svg xml
-  var figureAttrs = {};
-  if (x !== undefined && y !== undefined) {
-    figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
-  }
-  var barEl = buildEl('g', figureAttrs, id);
-
-  // Generate the grouping element used to apply the rotation tranformation
-  var halfWidth = width / 2;
-  var halfHeight = height / 2;
-  var groupingTransforms = [
-    "translate(" + halfWidth + ", " + -halfHeight + ")",
-    "rotate(90)",
-    "translate(" + halfHeight + ", " + -halfWidth + ")"
-  ];
-
-  var groupingEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
-  barEl.appendChild(groupingEl);
-
-  // Generate the background rectangle element
-  var rectAttrs = {
-    'class': 'bar',
-    'x': 0, 'y': 0,
-    'width': height, 'height': width, // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-    'fill': color
-  };
-  var rectEl = buildEl('rect', rectAttrs);
-  groupingEl.appendChild(rectEl);
-
-  // Generate the text label element
-  var textAttrs = {
-    'class': 'bar',
-    'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-  };
-  var textEl = buildEl('text', textAttrs);
-  textEl.innerHTML = name;
-  groupingEl.appendChild(textEl);
-
-  return barEl;
 }
