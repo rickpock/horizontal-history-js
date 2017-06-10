@@ -172,20 +172,34 @@ function Image(width, height, parentEl) {
   /*
   * Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
   * 
-  * id:     ID to apply to the element.
-  * name:   The historical figure's name to draw on the bar.
-  * height: Bar height.
-  * color:  Bar background color.
-  * x:      Horizontal offset from the left of the 'figures' region.
-  * y:      Vertical offset from the top of the 'figures' region.
+  * id:      ID to apply to the element.
+  * name:    The historical figure's name to draw on the bar.
+  * startYr: The year the historical figure was born.
+  * endYr:   The year the historical figure died. Use null to represent still alive.
+  * color:   Bar background color.
+  * colIdx:  The column in which the bar should be drawn.
   *
   * Side effect: Adds a tree of svg elements representing a historical figure to the svg DOM.
   * 
   * Returns: An svg xml element tree.
   */
-  this.innerAddBarEl = function (id, name, height, color, x, y) {
+  this.addBarEl = function(id, name, startYr, endYr, color, colIdx) {
+    // Handle an endYr of null representing "still alive"
+    if (endYr === undefined || endYr === null) {
+      effectiveEndYr = curYr;
+    }
+
+    // Determine the dimensions and location of the bar
+    var x = colIdx * colWidth;
+    var height = (effectiveEndYr - startYr) * yrHeight;
+    var y = (indexYr - effectiveEndYr) * yrHeight;
+
     // Generate the "root" element of the bar svg xml
-    var figureAttrs = {};
+    var figureAttrs = {
+      'startYr': startYr, 'endYr': endYr,
+      'colIdx': colIdx,
+      'category': color
+    };
     if (x !== undefined && y !== undefined) {
       figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
     }
@@ -225,32 +239,6 @@ function Image(width, height, parentEl) {
     this.figuresEl.appendChild(barEl);
   
     return barEl;
-  }
-
-  /*
-  * Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
-  * 
-  * id:      ID to apply to the element.
-  * name:    The historical figure's name to draw on the bar.
-  * startYr: The year the historical figure was born.
-  * endYr:   The year the historical figure died. Use null to represent still alive.
-  * color:   Bar background color.
-  * colIdx:  The column in which the bar should be drawn.
-  *
-  * Side effect: Adds a tree of svg elements representing a historical figure to the svg DOM.
-  * 
-  * Returns: An svg xml element tree.
-  */
-  this.addBarEl = function(id, name, startYr, endYr, color, colIdx) {
-    if (endYr === undefined || endYr === null) {
-      endYr = curYr;
-    }
-
-    var x = colIdx * colWidth;
-    var height = (endYr - startYr) * yrHeight;
-    var y = (indexYr - endYr) * yrHeight;
-
-    this.innerAddBarEl(id, name, height, color, x, y);
   }
 
   /*
