@@ -7,6 +7,8 @@ function Image(width, height, parentEl) {
   this.width = width - 1;
   this.height = height - 1;
 
+  this.barEls = [];
+
   // Helper methods
 
   /*
@@ -168,6 +170,54 @@ function Image(width, height, parentEl) {
   }
 
   // Methods to manipulate figure bars
+  
+  updatePosition = function(barEl) {
+  }
+
+  /*
+  * Assigns appropriate column indices to each bar element.
+  * 
+  * Side Effect: Reassigns 'colIdx' and 'transform' attributes on each bar element.
+  *
+  * Returns: Nothing
+  */
+  this.assignCols = function() {
+    this.barEls.sort(function(a, b) {
+      var endYrDiff = b.getAttribute('effectiveEndYr') - a.getAttribute('effectiveEndYr');
+      if (endYrDiff == 0) {
+        return b.getAttribute('startYr') - a.getAttribute('startYr');
+      } else {
+        return endYrDiff;
+      }
+    });
+
+    var colsAvailYr = [];
+    this.barEls.forEach(function(barEl, idx) {
+      // Find the first column available throught the bar's end year
+      firstAvailColIdx = colsAvailYr.findIndex(function(availYr) {
+        return availYr >= barEl.getAttribute('effectiveEndYr');
+      });
+
+      if (firstAvailColIdx == -1) {
+        // No column is available for this bar
+        // Add a new one
+        barEl.setAttribute('colIdx', colsAvailYr.length);
+        colsAvailYr.push(barEl.getAttribute('startYr'));
+      } else {
+        barEl.setAttribute('colIdx', firstAvailColIdx);
+        colsAvailYr[firstAvailColIdx] = barEl.getAttribute('startYr');
+      }
+
+      var colIdx = parseInt(barEl.getAttribute('colIdx'));
+      var effectiveEndYr = parseInt(barEl.getAttribute('effectiveEndYr'));
+
+      var x = colIdx * colWidth;
+      var y = (indexYr - effectiveEndYr) * yrHeight;
+
+      var transform = "translate(" + x + ", " + y + ")";
+      barEl.setAttribute('transform', transform);
+    });
+  }
 
   /*
   * Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
@@ -187,6 +237,8 @@ function Image(width, height, parentEl) {
     // Handle an endYr of null representing "still alive"
     if (endYr === undefined || endYr === null) {
       effectiveEndYr = curYr;
+    } else {
+      effectiveEndYr = endYr;
     }
 
     // Determine the dimensions and location of the bar
@@ -196,7 +248,9 @@ function Image(width, height, parentEl) {
 
     // Generate the "root" element of the bar svg xml
     var figureAttrs = {
+      'class': 'bar',
       'startYr': startYr, 'endYr': endYr,
+      'effectiveEndYr': effectiveEndYr,
       'colIdx': colIdx,
       'category': color
     };
@@ -204,6 +258,7 @@ function Image(width, height, parentEl) {
       figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
     }
     var barEl = buildEl('g', figureAttrs, id);
+    this.barEls.push(barEl);
   
     // Generate the grouping element used to apply the rotation tranformation
     var halfWidth = colWidth / 2;
@@ -237,6 +292,8 @@ function Image(width, height, parentEl) {
     groupingEl.appendChild(textEl);
 
     this.figuresEl.appendChild(barEl);
+
+    this.assignCols();
   
     return barEl;
   }
