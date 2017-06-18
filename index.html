@@ -3,6 +3,46 @@
     <link rel="stylesheet" type="text/css" href="image.css">
     <script src="image.js"></script>
     <script>
+      function isEl(node) {
+        return node.tagName !== undefined;
+      }
+
+      function cloneTreeWithStyle(node) {
+        // Clode the node
+        var cloneNode = node.cloneNode(false);
+
+        // Clone the computed style info
+        if (isEl(node)) {
+          // Get the effective style for the element
+          var styleInfo = window.getComputedStyle(node, null);
+
+          // Apply the style directly to the cloned element
+          for (var propertyIdx = 0; propertyIdx < styleInfo.length; propertyIdx++) {
+            var property = styleInfo[propertyIdx];
+
+            // Do *NOT* set style info for attributes set directly on the element
+            if (!(property in cloneNode)) {
+              cloneNode.style[property] = styleInfo.getPropertyValue(property);
+            }
+          }
+
+          //cloneNode.style.cssText = window.getComputedStyle(node, null).cssText;
+        }
+
+        // Recur
+        node.childNodes.forEach(function(child, idx) {
+          cloneNode.appendChild(cloneTreeWithStyle(child));
+        });
+
+        return cloneNode;
+      }
+
+      function makeMockSvgDom(image) {
+        var svgEl = image.svgEl;
+
+        return cloneTree(svgEl);
+      }
+
       window.onload = function () {
         var imageParentEl = document.getElementById('imageDiv');
         window.image = new Image(221, 381, imageParentEl);
@@ -20,6 +60,21 @@
           window.image.addBarEl('el' + curColIdx, name, startYr, endYr, 'lightblue', curColIdx);
           curColIdx++;
         };
+
+        document.getElementById('download').onclick = function () {
+          var DOMURL = window.URL || window.webkitURL || window;
+
+          var svgEl = window.image.svgEl;
+  
+          var xmlSerializer = new XMLSerializer();
+          var cloneSvgElWithStyle = cloneTreeWithStyle(svgEl);
+          var svgContent = xmlSerializer.serializeToString(cloneSvgElWithStyle);
+  
+          var standaloneSvgContent = "<?xml version='1.0' ?>" + svgContent;
+          var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(standaloneSvgContent);
+  
+          window.location.href = url;
+        };
       };
     </script>
   </head>
@@ -35,5 +90,8 @@
       <br />
       <input type="submit" value="Add Bar" />
     </form>
+    <br />
+    <a id='download' href="javascript:void(0);">Download</a>
+    <canvas />
   </body>
 </html>
