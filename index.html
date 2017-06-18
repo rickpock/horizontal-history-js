@@ -37,12 +37,6 @@
         return cloneNode;
       }
 
-      function makeMockSvgDom(image) {
-        var svgEl = image.svgEl;
-
-        return cloneTree(svgEl);
-      }
-
       window.onload = function () {
         var imageParentEl = document.getElementById('imageDiv');
         window.image = new Image(221, 381, imageParentEl);
@@ -73,7 +67,7 @@
           var standaloneSvgContent = "<?xml version='1.0' ?>" + svgContent;
           var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(standaloneSvgContent);
   
-          window.location.href = url;
+          document.getElementById('download').href = url;
         };
       };
     </script>
@@ -91,7 +85,7 @@
       <input type="submit" value="Add Bar" />
     </form>
     <br />
-    <a id='download' href="javascript:void(0);">Download</a>
+    <a id='download' download="history.svg" href="javascript:void(0);">Download</a>
     <canvas />
   </body>
 </html>
