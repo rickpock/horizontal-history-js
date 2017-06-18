@@ -268,21 +268,23 @@ function Image(width, height, parentEl) {
   }
 
   // Default figure background colors to auto-assign
+  // TODO: WARNING: This code may be browser-dependent
+  // Chrome returns color data from css styles as rgb(r, g, b), but other browsers
+  // may format this differently!
   this.categoryBgColors = [
-    "#66CCFF",
-    "#009999",
-    "#000099",
-    "#9999FF",
-    "#00CC00",
-    "#66FFCC",
-    "#009900",
-    "darkgray",
-    "#9900CC",
-    "#FF00FF",
-    "#FF0000",
-    "#FF9933",
-    "#FFFF00",
-    "#996600"
+    "rgb(102, 204, 255)",
+    "rgb(0, 153, 153)",
+    "rgb(0, 0, 153)",
+    "rgb(153, 153, 255)",
+    "rgb(0, 204, 0)",
+    "rgb(102, 255, 204)",
+    "rgb(0, 153, 0)",
+    "rgb(153, 0, 204)",
+    "rgb(255, 0, 255)",
+    "rgb(255, 0, 0)",
+    "rgb(255, 153, 33)",
+    "rgb(255, 255, 0)",
+    "rgb(153, 102, 0)"
   ];
 
   this.checkCategories = function(category) {
@@ -304,7 +306,7 @@ function Image(width, height, parentEl) {
         // Remove the color from availableBgColors, if it's in there
         var colorIdx = availableBgColors.indexOf(color);
         if (colorIdx > -1) {
-          availableBgColor.splice(colorIdx, 1);
+          availableBgColors.splice(colorIdx, 1);
         }
       }
     }

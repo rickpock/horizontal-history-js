@@ -49,7 +49,9 @@
           if (endYrStr != "") {
             endYr = parseInt(endYrStr);
           }
-          window.image.addBarEl('el' + curColIdx, name, startYr, endYr, 'lightblue', curColIdx);
+          var category = addBarFormEl.category.value;
+
+          window.image.addBarEl('el' + curColIdx, name, startYr, endYr, category, curColIdx);
           curColIdx++;
         };
 
@@ -69,6 +71,8 @@
       Start Year: <input id="startYr" type="text" />
       <br />
       End Year: <input id="endYr" type="text" />
+      <br />
+      Category: <input id="category" type="text" />
       <br />
       <input type="submit" value="Add Bar" />
     </form>
