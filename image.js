@@ -1,3 +1,51 @@
+/*
+* Determines whether a DOM node is an element (versus text).
+* 
+* node: Required. The node to check.
+* 
+* Returns: True iff the node is an element.
+*/
+function isEl(node) {
+  return node.tagName !== undefined;
+}
+
+/*
+* Clones a DOM node and all its children (recursively) with the
+* effective style applied directly to each element.
+* Used to generate a DOM tree indpendent of CSS.
+*
+* node: Required. Root node to clone.
+*
+* Returns: DOM node tree with styles applied.
+*/
+function cloneTreeWithStyle(node) {
+  // Clode the node
+  var cloneNode = node.cloneNode(false);
+
+  // Clone the computed style info
+  if (isEl(node)) {
+    // Get the effective style for the element
+    var styleInfo = window.getComputedStyle(node, null);
+
+    // Apply the style directly to the cloned element
+    for (var propertyIdx = 0; propertyIdx < styleInfo.length; propertyIdx++) {
+      var property = styleInfo[propertyIdx];
+
+      // Do *NOT* set style info for attributes set directly on the element
+      if (!(property in cloneNode)) {
+        cloneNode.style[property] = styleInfo.getPropertyValue(property);
+      }
+    }
+  }
+
+  // Recur
+  node.childNodes.forEach(function(child, idx) {
+    cloneNode.appendChild(cloneTreeWithStyle(child));
+  });
+
+  return cloneNode;
+}
+
 function Image(width, height, parentEl) {
 
   // Initialize member variables
@@ -296,6 +344,28 @@ function Image(width, height, parentEl) {
     this.assignCols();
   
     return barEl;
+  }
+
+  // Other "public" methods
+  
+  /*
+  * Generates a url with the image content encoded into it.
+  *
+  * Returns: A url with the image content encoded into it.
+  */
+  this.getUrl = function() {
+    // Create a clone of the image with styles applied directly to the elements
+    var cloneSvgElWithStyle = cloneTreeWithStyle(this.svgEl);
+
+    // Serialize the SVG
+    var xmlSerializer = new XMLSerializer();
+    var svgContent = xmlSerializer.serializeToString(cloneSvgElWithStyle);
+  
+    // Construct a URL with serialized content
+    var standaloneSvgContent = "<?xml version='1.0' ?>" + svgContent;
+    var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(standaloneSvgContent);
+
+    return url;
   }
 
   /*
