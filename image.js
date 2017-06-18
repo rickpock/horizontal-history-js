@@ -267,21 +267,71 @@ function Image(width, height, parentEl) {
     });
   }
 
+  // Default figure background colors to auto-assign
+  this.categoryBgColors = [
+    "#66CCFF",
+    "#009999",
+    "#000099",
+    "#9999FF",
+    "#00CC00",
+    "#66FFCC",
+    "#009900",
+    "darkgray",
+    "#9900CC",
+    "#FF00FF",
+    "#FF0000",
+    "#FF9933",
+    "#FFFF00",
+    "#996600"
+  ];
+
+  this.checkCategories = function(category) {
+    // Clone the categoryBgColors
+    var availableBgColors = this.categoryBgColors.slice(0); // Use slice(0) to clone
+
+    // Look through known categories
+    for (var ruleIdx = 0; ruleIdx < this.categoryCss.sheet.cssRules.length; ruleIdx++) {
+      var rule = this.categoryCss.sheet.cssRules[ruleIdx];
+
+      // If a bg color for this category is already defined, we're done
+      if (rule.selectorText == "rect.category-" + category) {
+        return;
+      }
+
+      // Track which colors are already in use, so we don't reuse them
+      if (rule.selectorText.startsWith("rect.category-")) {
+        var color = rule.style.fill;
+        // Remove the color from availableBgColors, if it's in there
+        var colorIdx = availableBgColors.indexOf(color);
+        if (colorIdx > -1) {
+          availableBgColor.splice(colorIdx, 1);
+        }
+      }
+    }
+
+    // At this point, the category does not have a color defined. Choose the first available color.
+    var nextBgColor = availableBgColors[0];
+
+    this.categoryCss.appendChild(document.createTextNode("rect.category-" + category + "{fill:" + nextBgColor + "}"));
+  }
+
   /*
   * Generates the svg xml element tree used to render a bar for a historical figure's lifetime.
   * 
-  * id:      ID to apply to the element.
-  * name:    The historical figure's name to draw on the bar.
-  * startYr: The year the historical figure was born.
-  * endYr:   The year the historical figure died. Use null to represent still alive.
-  * color:   Bar background color.
-  * colIdx:  The column in which the bar should be drawn.
+  * id:       ID to apply to the element.
+  * name:     The historical figure's name to draw on the bar.
+  * startYr:  The year the historical figure was born.
+  * endYr:    The year the historical figure died. Use null to represent still alive.
+  * category: Category.
+  * colIdx:   The column in which the bar should be drawn.
   *
   * Side effect: Adds a tree of svg elements representing a historical figure to the svg DOM.
   * 
   * Returns: An svg xml element tree.
   */
-  this.addBarEl = function(id, name, startYr, endYr, color, colIdx) {
+  this.addBarEl = function(id, name, startYr, endYr, category, colIdx) {
+    this.checkCategories(category);
+
     // Handle an endYr of null representing "still alive"
     if (endYr === undefined || endYr === null) {
       effectiveEndYr = curYr;
@@ -296,11 +346,11 @@ function Image(width, height, parentEl) {
 
     // Generate the "root" element of the bar svg xml
     var figureAttrs = {
-      'class': 'bar',
+      'class': 'bar category-' + category,
       'startYr': startYr, 'endYr': endYr,
       'effectiveEndYr': effectiveEndYr,
       'colIdx': colIdx,
-      'category': color
+      'category': category
     };
     if (x !== undefined && y !== undefined) {
       figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
@@ -322,17 +372,16 @@ function Image(width, height, parentEl) {
   
     // Generate the background rectangle element
     var rectAttrs = {
-      'class': 'bar',
+      'class': 'bar category-' + category,
       'x': 0, 'y': 0,
-      'width': height, 'height': colWidth, // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-      'fill': color
+      'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
     };
     var rectEl = buildEl('rect', rectAttrs);
     groupingEl.appendChild(rectEl);
   
     // Generate the text label element
     var textAttrs = {
-      'class': 'bar',
+      'class': 'bar category-' + category,
       'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
     };
     var textEl = buildEl('text', textAttrs);
@@ -454,9 +503,18 @@ function Image(width, height, parentEl) {
 
   this.addDecadeEls(1888, curYr);
 
-
   // If parentEl is passed in, automatically add the svg element to it as a child
   if (parentEl !== undefined) {
     parentEl.appendChild(this.svgEl);
   }
+
+  // Set-up style sheet for figure categories
+
+  this.categoryCss = document.createElement('style');
+  this.categoryCss.setAttribute('id', 'categoryCss');
+  this.categoryCss.type = 'text/css';
+
+  //this.categoryCss.appendChild(document.createTextNode("rect.category-lightblue{fill:red}"));
+
+  document.getElementsByTagName('head')[0].appendChild(this.categoryCss);
 }
