@@ -332,7 +332,9 @@ function Image(width, height, parentEl) {
   * Returns: An svg xml element tree.
   */
   this.addBarEl = function(id, name, startYr, endYr, category, colIdx) {
-    this.checkCategories(category);
+    // Convert spaces to underscores in categories
+    var cleanCategory = category.replace(/ /g, '_');
+    this.checkCategories(cleanCategory);
 
     // Handle an endYr of null representing "still alive"
     if (endYr === undefined || endYr === null) {
@@ -348,7 +350,7 @@ function Image(width, height, parentEl) {
 
     // Generate the "root" element of the bar svg xml
     var figureAttrs = {
-      'class': 'bar category-' + category,
+      'class': 'bar category-' + cleanCategory,
       'startYr': startYr, 'endYr': endYr,
       'effectiveEndYr': effectiveEndYr,
       'colIdx': colIdx,
@@ -374,7 +376,7 @@ function Image(width, height, parentEl) {
   
     // Generate the background rectangle element
     var rectAttrs = {
-      'class': 'bar category-' + category,
+      'class': 'bar category-' + cleanCategory,
       'x': 0, 'y': 0,
       'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
     };
@@ -383,7 +385,7 @@ function Image(width, height, parentEl) {
   
     // Generate the text label element
     var textAttrs = {
-      'class': 'bar category-' + category,
+      'class': 'bar category-' + cleanCategory,
       'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
     };
     var textEl = buildEl('text', textAttrs);
@@ -515,8 +517,6 @@ function Image(width, height, parentEl) {
   this.categoryCss = document.createElement('style');
   this.categoryCss.setAttribute('id', 'categoryCss');
   this.categoryCss.type = 'text/css';
-
-  //this.categoryCss.appendChild(document.createTextNode("rect.category-lightblue{fill:red}"));
 
   document.getElementsByTagName('head')[0].appendChild(this.categoryCss);
 }
