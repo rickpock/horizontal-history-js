@@ -40,6 +40,11 @@ rect.bar {
   stroke-width: 1;
 }
 
+rect.selected-bar {
+  stroke: yellow;
+  stroke-width: 3;
+}
+
 text.bar {
   text-anchor: middle;
   alignment-baseline: central;
