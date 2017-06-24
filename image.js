@@ -387,6 +387,7 @@ function Image(width, height, parentEl) {
       'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
     };
     var rectEl = buildEl('rect', rectAttrs);
+    var image = this;
     rectEl.onclick = function() {
       // Unselect any bars
       var selected = document.getElementsByClassName('selected-bar');
@@ -398,6 +399,9 @@ function Image(width, height, parentEl) {
         // This effective implements toggling selection
         // It's safe to return without finishing the loop, since there should only ever be at most one selected element
         if (bar == this) {
+          if (image.onselect !== undefined && image.onselect != null) {
+            image.onselect(null);
+          }
           return;
         }
       }
@@ -408,6 +412,10 @@ function Image(width, height, parentEl) {
       // Move this bar to the foreground
       var gEl = this.parentNode.parentNode;
       gEl.parentNode.appendChild(gEl);
+
+      if (image.onselect !== undefined && image.onselect != null) {
+        image.onselect(gEl);
+      }
     }
     groupingEl.appendChild(rectEl);
   
