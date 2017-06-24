@@ -136,8 +136,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     "translate(" + halfHeight + ", " + -halfWidth + ")"
   ];
   
-  var rotateGEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
-  barGEl.appendChild(rotateGEl);
+  this.rotateGEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
+  this.barGEl.appendChild(this.rotateGEl);
 
   // Generate the background rectangle element
   var bgRectAttrs = {
@@ -145,11 +145,11 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     'x': 0, 'y': 0,
     'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
   };
-  var bgRectEl = buildEl('rect', bgRectAttrs);
-  rotateGEl.appendChild(bgRectEl);
+  this.bgRectEl = buildEl('rect', bgRectAttrs);
+  this.rotateGEl.appendChild(this.bgRectEl);
 
   // Add event handling to the background rectangle element
-  bgRectEl.onclick = function() {
+  this.bgRectEl.onclick = function() {
     var image = bar.image;
 
     var selected = image.getSelectedBar();
@@ -168,11 +168,22 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     'class': 'bar category-' + this.category,
     'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
   };
-  var textEl = buildEl('text', textAttrs);
-  textEl.innerHTML = this.name;
-  rotateGEl.appendChild(textEl);
+  this.textEl = buildEl('text', textAttrs);
+  this.textEl.innerHTML = this.name;
+  this.rotateGEl.appendChild(this.textEl);
 
-  this.image.figuresEl.appendChild(barGEl);
+  this.image.figuresEl.appendChild(this.barGEl);
+
+  this.moveToCol = function(colIdx) {
+    // Update colIdx
+    this.colIdx = colIdx;
+
+    // Update the location
+    var x = this.colIdx * colWidth;
+    var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+    this.barGEl.setAttribute('transform', "translate(" + x + ", " + y + ")");
+  }
 }
 
 function Image(width, height, parentEl) {
@@ -184,7 +195,7 @@ function Image(width, height, parentEl) {
   this.width = width - 1;
   this.height = height - 1;
 
-  this.barEls = [];
+  this.bars = [];
 
   // Methods for labels and other meta content
 
@@ -310,40 +321,37 @@ function Image(width, height, parentEl) {
   * Returns: Nothing
   */
   this.assignCols = function() {
-    this.barEls.sort(function(a, b) {
-      var endYrDiff = b.getAttribute('effectiveEndYr') - a.getAttribute('effectiveEndYr');
+    this.bars.sort(function(a, b) {
+      var endYrDiff = b.effectiveEndYr- a.effectiveEndYr;
       if (endYrDiff == 0) {
-        return b.getAttribute('startYr') - a.getAttribute('startYr');
+        return b.startYr - a.startYr;
       } else {
         return endYrDiff;
       }
     });
 
     var colsAvailYr = [];
-    this.barEls.forEach(function(barEl, idx) {
+    this.bars.forEach(function(bar, idx) {
       // Find the first column available throught the bar's end year
       firstAvailColIdx = colsAvailYr.findIndex(function(availYr) {
-        return availYr >= barEl.getAttribute('effectiveEndYr');
+        return availYr >= bar.effectiveEndYr;
       });
 
       if (firstAvailColIdx == -1) {
         // No column is available for this bar
         // Add a new one
-        barEl.setAttribute('colIdx', colsAvailYr.length);
-        colsAvailYr.push(barEl.getAttribute('startYr'));
+        bar.moveToCol(colsAvailYr.length);
+        colsAvailYr.push(bar.startYr);
       } else {
-        barEl.setAttribute('colIdx', firstAvailColIdx);
-        colsAvailYr[firstAvailColIdx] = barEl.getAttribute('startYr');
+        bar.moveToCol(firstAvailColIdx);
+        colsAvailYr[firstAvailColIdx] = bar.startYr;
       }
 
-      var colIdx = parseInt(barEl.getAttribute('colIdx'));
-      var effectiveEndYr = parseInt(barEl.getAttribute('effectiveEndYr'));
+      var colIdx = bar.colIdx;
+      var effectiveEndYr = bar.effectiveEndYr;
 
       var x = colIdx * colWidth;
       var y = (indexYr - effectiveEndYr) * yrHeight;
-
-      var transform = "translate(" + x + ", " + y + ")";
-      barEl.setAttribute('transform', transform);
     });
 
     // Move the selected bars (if any) to the foreground
@@ -419,10 +427,16 @@ function Image(width, height, parentEl) {
   * 
   * Returns: An svg xml element tree.
   */
-  this.addBar= function(id, name, startYr, endYr, category, colIdx) {
+  this.addBar = function(id, name, startYr, endYr, category, colIdx) {
     this.checkCategories(category);
 
-    return Bar(this, id, name, startYr, endYr, category, colIdx);
+    var bar = new Bar(this, id, name, startYr, endYr, category, colIdx);
+
+    this.bars.push(bar);
+
+    this.assignCols();
+
+    return bar;
   }
 
   // Other "public" methods
