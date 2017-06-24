@@ -46,6 +46,135 @@ function cloneTreeWithStyle(node) {
   return cloneNode;
 }
 
+/*
+* Determines the decade in which a year belongs.
+* A decade is defined as an integer of all the digits in a year except the one's digit.
+* For example, the decade for 1945 is 194.
+* 
+* yr: Required. The year.
+* 
+* Returns: The decade containing 'yr'.
+*/
+getDecadeForYr = function (yr) {
+  return Math.floor(yr / 10);
+}
+
+// Constants
+
+const curYr = new Date().getFullYear();
+const curDecade = getDecadeForYr(curYr);
+const indexYr = (curDecade + 1) * 10;
+
+const yrHeight = 3;
+const decadeHeight = yrHeight * 10;
+const decadeWidth = 60;
+
+const colWidth = 30;
+
+/*
+* Generically generates an xml element.
+* This is designed to be used to create elements to add to the svg.
+* The element is _not_ added to any DOM by this function.
+* 
+* name: Required. Tag name for the new element.
+* attr: Required. An JS object of attribute values to be added to the element.
+* id:   Optional. The element's id attribute.
+* 
+* Returns a reference to the element.
+*/
+buildEl = function (name, attrs, id) {
+  var el = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (var key in attrs) {
+    el.setAttribute(key, attrs[key]);
+  }
+
+  if (id !== undefined) el.setAttribute('id', id);
+
+  return el;
+}
+
+function Bar(image, id, name, startYr, endYr, category, colIdx) {
+  this.image = image;
+  this.id = id;
+  this.name = name;
+  this.startYr = startYr;
+  this.endYr = endYr;
+  this.category = category;
+  this.colIdx = colIdx;
+
+  const bar = this;
+
+  // Handle an endYr of null representing "still alive"
+  if (endYr === undefined || endYr === null) {
+    this.effectiveEndYr = curYr;
+  } else {
+    this.effectiveEndYr = endYr;
+  }
+
+  // Determine the dimensions and location of the bar
+  var x = this.colIdx * colWidth;
+  var height = (this.effectiveEndYr - this.startYr) * yrHeight;
+  var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+  // Generate the "root" grouping element of the bar svg xml
+  var barGAttrs = {
+    'class': 'bar category-' + this.category,
+    'startYr': this.startYr, 'endYr': this.endYr,
+    'effectiveEndYr': this.effectiveEndYr,
+    'colIdx': this.colIdx,
+    'category': this.category,
+    'transform': "translate(" + x + ", " + y + ")"
+  };
+  this.barGEl = buildEl('g', barGAttrs, id);
+
+  // Generate the grouping element used to apply the rotation tranformation
+  var halfWidth = colWidth / 2;
+  var halfHeight = height / 2;
+  var groupingTransforms = [
+    "translate(" + halfWidth + ", " + -halfHeight + ")",
+    "rotate(90)",
+    "translate(" + halfHeight + ", " + -halfWidth + ")"
+  ];
+  
+  var rotateGEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
+  barGEl.appendChild(rotateGEl);
+
+  // Generate the background rectangle element
+  var bgRectAttrs = {
+    'class': 'bar category-' + this.category,
+    'x': 0, 'y': 0,
+    'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+  };
+  var bgRectEl = buildEl('rect', bgRectAttrs);
+  rotateGEl.appendChild(bgRectEl);
+
+  // Add event handling to the background rectangle element
+  bgRectEl.onclick = function() {
+    var image = bar.image;
+
+    var selected = image.getSelectedBar();
+    if (selected !== null) {
+      // If we've clicked on the selected bar, unselect it
+      if (selected == bar) {
+        image.selectBar(null);
+      } else {
+        image.selectBar(bar);
+      }
+    }
+  }
+
+  // Generate the text label element
+  var textAttrs = {
+    'class': 'bar category-' + this.category,
+    'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+  };
+  var textEl = buildEl('text', textAttrs);
+  textEl.innerHTML = this.name;
+  rotateGEl.appendChild(textEl);
+
+  this.image.figuresEl.appendChild(barGEl);
+}
+
 function Image(width, height, parentEl) {
 
   // Initialize member variables
@@ -56,55 +185,6 @@ function Image(width, height, parentEl) {
   this.height = height - 1;
 
   this.barEls = [];
-
-  // Helper methods
-
-  /*
-  * Determines the decade in which a year belongs.
-  * A decade is defined as an integer of all the digits in a year except the one's digit.
-  * For example, the decade for 1945 is 194.
-  * 
-  * yr: Required. The year.
-  * 
-  * Returns: The decade containing 'yr'.
-  */
-  getDecadeForYr = function (yr) {
-    return Math.floor(yr / 10);
-  }
-
-  /*
-  * Generically generates an xml element.
-  * This is designed to be used to create elements to add to the svg.
-  * The element is _not_ added to any DOM by this function.
-  * 
-  * name: Required. Tag name for the new element.
-  * attr: Required. An JS object of attribute values to be added to the element.
-  * id:   Optional. The element's id attribute.
-  * 
-  * Returns a reference to the element.
-  */
-  buildEl = function (name, attrs, id) {
-    var el = document.createElementNS("http://www.w3.org/2000/svg", name);
-    for (var key in attrs) {
-      el.setAttribute(key, attrs[key]);
-    }
-  
-    if (id !== undefined) el.setAttribute('id', id);
-  
-    return el;
-  }
-
-  // Constants
-
-  const curYr = new Date().getFullYear();
-  const curDecade = getDecadeForYr(curYr);
-  const indexYr = (curDecade + 1) * 10;
-  
-  const yrHeight = 3;
-  const decadeHeight = yrHeight * 10;
-  const decadeWidth = 60;
-
-  const colWidth = 30;
 
   // Methods for labels and other meta content
 
@@ -339,100 +419,10 @@ function Image(width, height, parentEl) {
   * 
   * Returns: An svg xml element tree.
   */
-  this.addBarEl = function(id, name, startYr, endYr, category, colIdx) {
+  this.addBar= function(id, name, startYr, endYr, category, colIdx) {
     this.checkCategories(category);
 
-    // Handle an endYr of null representing "still alive"
-    if (endYr === undefined || endYr === null) {
-      effectiveEndYr = curYr;
-    } else {
-      effectiveEndYr = endYr;
-    }
-
-    // Determine the dimensions and location of the bar
-    var x = colIdx * colWidth;
-    var height = (effectiveEndYr - startYr) * yrHeight;
-    var y = (indexYr - effectiveEndYr) * yrHeight;
-
-    // Generate the "root" element of the bar svg xml
-    var figureAttrs = {
-      'class': 'bar category-' + category,
-      'startYr': startYr, 'endYr': endYr,
-      'effectiveEndYr': effectiveEndYr,
-      'colIdx': colIdx,
-      'category': category
-    };
-    if (x !== undefined && y !== undefined) {
-      figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
-    }
-    var barEl = buildEl('g', figureAttrs, id);
-    this.barEls.push(barEl);
-  
-    // Generate the grouping element used to apply the rotation tranformation
-    var halfWidth = colWidth / 2;
-    var halfHeight = height / 2;
-    var groupingTransforms = [
-      "translate(" + halfWidth + ", " + -halfHeight + ")",
-      "rotate(90)",
-      "translate(" + halfHeight + ", " + -halfWidth + ")"
-    ];
-  
-    var groupingEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
-    barEl.appendChild(groupingEl);
-  
-    // Generate the background rectangle element
-    var rectAttrs = {
-      'class': 'bar category-' + category,
-      'x': 0, 'y': 0,
-      'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-    };
-    var rectEl = buildEl('rect', rectAttrs);
-    var image = this;
-    rectEl.onclick = function() {
-      // Unselect any bars
-      var selected = document.getElementsByClassName('selected-bar');
-      for (var idx = 0; idx < selected.length; idx++) {
-        var bar = selected[idx];
-        bar.classList.remove('selected-bar');
-
-        // If we've clicked on the selected bar, return after unselecting
-        // This effective implements toggling selection
-        // It's safe to return without finishing the loop, since there should only ever be at most one selected element
-        if (bar == this) {
-          if (image.onselect !== undefined && image.onselect != null) {
-            image.onselect(null);
-          }
-          return;
-        }
-      }
-
-      // Set this bar as selected
-      this.classList.add('selected-bar');
-
-      // Move this bar to the foreground
-      var gEl = this.parentNode.parentNode;
-      gEl.parentNode.appendChild(gEl);
-
-      if (image.onselect !== undefined && image.onselect != null) {
-        image.onselect(gEl);
-      }
-    }
-    groupingEl.appendChild(rectEl);
-  
-    // Generate the text label element
-    var textAttrs = {
-      'class': 'bar category-' + category,
-      'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-    };
-    var textEl = buildEl('text', textAttrs);
-    textEl.innerHTML = name;
-    groupingEl.appendChild(textEl);
-
-    this.figuresEl.appendChild(barEl);
-
-    this.assignCols();
-  
-    return barEl;
+    return Bar(this, id, name, startYr, endYr, category, colIdx);
   }
 
   // Other "public" methods
