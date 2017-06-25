@@ -10,17 +10,36 @@ function isEl(node) {
 }
 
 /*
+* Wraps a possibly-null function in a safe-to-call function
+*
+* func: Function to wrap. May be null.
+*
+* Returns: A definitively non-null function.
+*/
+function wrapCall(func) {
+  if (func !== undefined && func !== null) {
+    return func;
+  } else {
+    return function() {};
+  }
+}
+
+/*
 * Clones a DOM node and all its children (recursively) with the
 * effective style applied directly to each element.
 * Used to generate a DOM tree indpendent of CSS.
 *
 * node: Required. Root node to clone.
+* func: Optional. Function to run against each cloned node for additional customization.
 *
 * Returns: DOM node tree with styles applied.
 */
-function cloneTreeWithStyle(node) {
+function cloneTreeWithStyle(node, func) {
   // Clode the node
   var cloneNode = node.cloneNode(false);
+
+  // Run custom logic
+  wrapCall(func)(cloneNode);
 
   // Clone the computed style info
   if (isEl(node)) {
@@ -40,10 +59,202 @@ function cloneTreeWithStyle(node) {
 
   // Recur
   node.childNodes.forEach(function(child, idx) {
-    cloneNode.appendChild(cloneTreeWithStyle(child));
+    cloneNode.appendChild(cloneTreeWithStyle(child, func));
   });
 
   return cloneNode;
+}
+
+/*
+* Determines the decade in which a year belongs.
+* A decade is defined as an integer of all the digits in a year except the one's digit.
+* For example, the decade for 1945 is 194.
+* 
+* yr: Required. The year.
+* 
+* Returns: The decade containing 'yr'.
+*/
+getDecadeForYr = function (yr) {
+  return Math.floor(yr / 10);
+}
+
+// Constants
+
+const curYr = new Date().getFullYear();
+const curDecade = getDecadeForYr(curYr);
+const indexYr = (curDecade + 1) * 10;
+
+const yrHeight = 3;
+const decadeHeight = yrHeight * 10;
+const decadeWidth = 60;
+
+const colWidth = 30;
+
+/*
+* Generically adds attributes to an element.
+* 
+* el:   Required. Reference to the element.
+* attr: Required. An JS object of attribute values to be added to the element.
+* 
+* Returns nothing
+*/
+setAttrs = function (el, attrs) {
+  for (var key in attrs) {
+    el.setAttribute(key, attrs[key]);
+  }
+}
+
+/*
+* Generically generates an xml element.
+* This is designed to be used to create elements to add to the svg.
+* The element is _not_ added to any DOM by this function.
+* 
+* name: Required. Tag name for the new element.
+* attr: Required. An JS object of attribute values to be added to the element.
+* id:   Optional. The element's id attribute.
+* 
+* Returns a reference to the element.
+*/
+buildEl = function (name, attrs, id) {
+  var el = document.createElementNS("http://www.w3.org/2000/svg", name);
+  setAttrs(el, attrs);
+
+  if (id !== undefined) el.setAttribute('id', id);
+
+  return el;
+}
+
+function Bar(image, id, name, startYr, endYr, category, colIdx) {
+  this.image = image;
+  this.id = id;
+  this.colIdx = colIdx;
+
+  const bar = this;
+
+  this.moveToCol = function(colIdx) {
+    // Update colIdx
+    this.colIdx = colIdx;
+
+    // Update the location
+    var x = this.colIdx * colWidth;
+    var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+    this.barGEl.setAttribute('transform', "translate(" + x + ", " + y + ")");
+  }
+
+  this.select = function() {
+    this.bgRectEl.classList.add('selected-bar');
+    this.image.figuresEl.appendChild(this.barGEl);
+  }
+
+  this.unselect = function() {
+    this.bgRectEl.classList.remove('selected-bar');
+  }
+
+  this.update = function (name, startYr, endYr, category) {
+    this.name = name;
+    this.startYr = startYr;
+    this.endYr = endYr;
+    this.category = category;
+
+    var cleanCategory = category.replace(/ /g, '_');
+
+    this.image.checkCategories(cleanCategory);
+
+    // Handle an endYr of null representing "still alive"
+    if (endYr === undefined || endYr === null) {
+      this.effectiveEndYr = curYr;
+    } else {
+      this.effectiveEndYr = endYr;
+    }
+  
+    // Determine the dimensions and location of the bar
+    var x = this.colIdx * colWidth;
+    var height = (this.effectiveEndYr - this.startYr) * yrHeight;
+    var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+    var oldCategory = this.barGEl.getAttribute('category');
+
+    var barGAttrs = {
+      'startYr': this.startYr, 'endYr': this.endYr,
+      'effectiveEndYr': this.effectiveEndYr,
+      'colIdx': this.colIdx,
+      'category': this.category,
+      'transform': "translate(" + x + ", " + y + ")"
+    };
+    setAttrs(this.barGEl, barGAttrs);
+    this.barGEl.classList.add('bar');
+    this.barGEl.classList.remove('category-' + oldCategory);
+    this.barGEl.classList.add('category-' + cleanCategory);
+
+    var halfWidth = colWidth / 2;
+    var halfHeight = height / 2;
+    var groupingTransforms = [
+      "translate(" + halfWidth + ", " + -halfHeight + ")",
+      "rotate(90)",
+      "translate(" + halfHeight + ", " + -halfWidth + ")"
+    ];
+    setAttrs(this.rotateGEl, {'transform': groupingTransforms.join(' ')});
+
+    var bgRectAttrs = {
+      'x': 0, 'y': 0,
+      'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+    };
+    setAttrs(this.bgRectEl, bgRectAttrs);
+    this.bgRectEl.classList.add('bar');
+    this.bgRectEl.classList.remove('category-' + oldCategory);
+    this.bgRectEl.classList.add('category-' + cleanCategory);
+  
+    var textAttrs = {
+      'class': 'bar category-' + cleanCategory,
+      'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+    };
+    setAttrs(this.textEl, textAttrs);
+    this.textEl.classList.add('bar');
+    this.textEl.classList.remove('category-' + oldCategory);
+    this.textEl.classList.add('category-' + cleanCategory);
+
+    this.textEl.innerHTML = this.name;
+
+    this.image.assignCols();
+  }
+
+  // Generate the "root" grouping element of the bar svg xml
+  this.barGEl = buildEl('g', {}, id);
+
+  // Generate the grouping element used to apply the rotation tranformation
+  this.rotateGEl = buildEl('g', {});
+  this.barGEl.appendChild(this.rotateGEl);
+
+  // Generate the background rectangle element
+  this.bgRectEl = buildEl('rect', {});
+  this.rotateGEl.appendChild(this.bgRectEl);
+
+  // Add event handling to the background rectangle element
+  this.bgRectEl.onclick = function() {
+    var image = bar.image;
+
+    var selected = image.getSelectedBar();
+    if (selected !== null) {
+      // If we've clicked on the selected bar, unselect it
+      if (selected == bar) {
+        image.selectBar(null);
+        return;
+      }
+    }
+    image.selectBar(bar);
+  }
+
+  // Generate the text label element
+  this.textEl = buildEl('text', {});
+  this.rotateGEl.appendChild(this.textEl);
+
+  this.textEl.onclick = this.bgRectEl.onclick;
+
+  this.image.figuresEl.appendChild(this.barGEl);
+  this.image.bars.push(this);
+
+  this.update(name, startYr, endYr, category);
 }
 
 function Image(width, height, parentEl) {
@@ -55,56 +266,8 @@ function Image(width, height, parentEl) {
   this.width = width - 1;
   this.height = height - 1;
 
-  this.barEls = [];
-
-  // Helper methods
-
-  /*
-  * Determines the decade in which a year belongs.
-  * A decade is defined as an integer of all the digits in a year except the one's digit.
-  * For example, the decade for 1945 is 194.
-  * 
-  * yr: Required. The year.
-  * 
-  * Returns: The decade containing 'yr'.
-  */
-  getDecadeForYr = function (yr) {
-    return Math.floor(yr / 10);
-  }
-
-  /*
-  * Generically generates an xml element.
-  * This is designed to be used to create elements to add to the svg.
-  * The element is _not_ added to any DOM by this function.
-  * 
-  * name: Required. Tag name for the new element.
-  * attr: Required. An JS object of attribute values to be added to the element.
-  * id:   Optional. The element's id attribute.
-  * 
-  * Returns a reference to the element.
-  */
-  buildEl = function (name, attrs, id) {
-    var el = document.createElementNS("http://www.w3.org/2000/svg", name);
-    for (var key in attrs) {
-      el.setAttribute(key, attrs[key]);
-    }
-  
-    if (id !== undefined) el.setAttribute('id', id);
-  
-    return el;
-  }
-
-  // Constants
-
-  const curYr = new Date().getFullYear();
-  const curDecade = getDecadeForYr(curYr);
-  const indexYr = (curDecade + 1) * 10;
-  
-  const yrHeight = 3;
-  const decadeHeight = yrHeight * 10;
-  const decadeWidth = 60;
-
-  const colWidth = 30;
+  this.bars = [];
+  this.selectedBar = null;
 
   // Methods for labels and other meta content
 
@@ -218,9 +381,6 @@ function Image(width, height, parentEl) {
   }
 
   // Methods to manipulate figure bars
-  
-  updatePosition = function(barEl) {
-  }
 
   /*
   * Assigns appropriate column indices to each bar element.
@@ -230,41 +390,64 @@ function Image(width, height, parentEl) {
   * Returns: Nothing
   */
   this.assignCols = function() {
-    this.barEls.sort(function(a, b) {
-      var endYrDiff = b.getAttribute('effectiveEndYr') - a.getAttribute('effectiveEndYr');
+    this.bars.sort(function(a, b) {
+      var endYrDiff = b.effectiveEndYr- a.effectiveEndYr;
       if (endYrDiff == 0) {
-        return b.getAttribute('startYr') - a.getAttribute('startYr');
+        return b.startYr - a.startYr;
       } else {
         return endYrDiff;
       }
     });
 
     var colsAvailYr = [];
-    this.barEls.forEach(function(barEl, idx) {
+    this.bars.forEach(function(bar, idx) {
       // Find the first column available throught the bar's end year
       firstAvailColIdx = colsAvailYr.findIndex(function(availYr) {
-        return availYr >= barEl.getAttribute('effectiveEndYr');
+        return availYr >= bar.effectiveEndYr;
       });
 
       if (firstAvailColIdx == -1) {
         // No column is available for this bar
         // Add a new one
-        barEl.setAttribute('colIdx', colsAvailYr.length);
-        colsAvailYr.push(barEl.getAttribute('startYr'));
+        bar.moveToCol(colsAvailYr.length);
+        colsAvailYr.push(bar.startYr);
       } else {
-        barEl.setAttribute('colIdx', firstAvailColIdx);
-        colsAvailYr[firstAvailColIdx] = barEl.getAttribute('startYr');
+        bar.moveToCol(firstAvailColIdx);
+        colsAvailYr[firstAvailColIdx] = bar.startYr;
       }
 
-      var colIdx = parseInt(barEl.getAttribute('colIdx'));
-      var effectiveEndYr = parseInt(barEl.getAttribute('effectiveEndYr'));
+      var colIdx = bar.colIdx;
+      var effectiveEndYr = bar.effectiveEndYr;
 
       var x = colIdx * colWidth;
       var y = (indexYr - effectiveEndYr) * yrHeight;
-
-      var transform = "translate(" + x + ", " + y + ")";
-      barEl.setAttribute('transform', transform);
     });
+
+    // Move the selected bars (if any) to the foreground
+    var selected = document.getElementsByClassName('selected-bar');
+    for (var idx = 0; idx < selected.length; idx++) {
+      var bar = selected[idx];
+      var gEl = bar.parentNode.parentNode;
+      gEl.parentNode.appendChild(gEl);
+    }
+  }
+
+  this.getSelectedBar = function() {
+    return this.selectedBar;
+  }
+
+  this.selectBar = function(bar) {
+    if (this.selectedBar !== null) {
+      this.selectedBar.unselect();
+    }
+
+    if (bar !== null) {
+      bar.select();
+    }
+
+    this.selectedBar = bar;
+
+    wrapCall(this.onselect)(bar);
   }
 
   // Default figure background colors to auto-assign
@@ -331,72 +514,10 @@ function Image(width, height, parentEl) {
   * 
   * Returns: An svg xml element tree.
   */
-  this.addBarEl = function(id, name, startYr, endYr, category, colIdx) {
-    // Convert spaces to underscores in categories
-    var cleanCategory = category.replace(/ /g, '_');
-    this.checkCategories(cleanCategory);
+  this.addBar = function(id, name, startYr, endYr, category) {
+    var bar = new Bar(this, id, name, startYr, endYr, category, 0);
 
-    // Handle an endYr of null representing "still alive"
-    if (endYr === undefined || endYr === null) {
-      effectiveEndYr = curYr;
-    } else {
-      effectiveEndYr = endYr;
-    }
-
-    // Determine the dimensions and location of the bar
-    var x = colIdx * colWidth;
-    var height = (effectiveEndYr - startYr) * yrHeight;
-    var y = (indexYr - effectiveEndYr) * yrHeight;
-
-    // Generate the "root" element of the bar svg xml
-    var figureAttrs = {
-      'class': 'bar category-' + cleanCategory,
-      'startYr': startYr, 'endYr': endYr,
-      'effectiveEndYr': effectiveEndYr,
-      'colIdx': colIdx,
-      'category': category
-    };
-    if (x !== undefined && y !== undefined) {
-      figureAttrs['transform'] = "translate(" + x + ", " + y + ")";
-    }
-    var barEl = buildEl('g', figureAttrs, id);
-    this.barEls.push(barEl);
-  
-    // Generate the grouping element used to apply the rotation tranformation
-    var halfWidth = colWidth / 2;
-    var halfHeight = height / 2;
-    var groupingTransforms = [
-      "translate(" + halfWidth + ", " + -halfHeight + ")",
-      "rotate(90)",
-      "translate(" + halfHeight + ", " + -halfWidth + ")"
-    ];
-  
-    var groupingEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
-    barEl.appendChild(groupingEl);
-  
-    // Generate the background rectangle element
-    var rectAttrs = {
-      'class': 'bar category-' + cleanCategory,
-      'x': 0, 'y': 0,
-      'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-    };
-    var rectEl = buildEl('rect', rectAttrs);
-    groupingEl.appendChild(rectEl);
-  
-    // Generate the text label element
-    var textAttrs = {
-      'class': 'bar category-' + cleanCategory,
-      'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-    };
-    var textEl = buildEl('text', textAttrs);
-    textEl.innerHTML = name;
-    groupingEl.appendChild(textEl);
-
-    this.figuresEl.appendChild(barEl);
-
-    this.assignCols();
-  
-    return barEl;
+    return bar;
   }
 
   // Other "public" methods
@@ -408,7 +529,7 @@ function Image(width, height, parentEl) {
   */
   this.getUrl = function() {
     // Create a clone of the image with styles applied directly to the elements
-    var cloneSvgElWithStyle = cloneTreeWithStyle(this.svgEl);
+    var cloneSvgElWithStyle = cloneTreeWithStyle(this.svgEl)
 
     // Serialize the SVG
     var xmlSerializer = new XMLSerializer();

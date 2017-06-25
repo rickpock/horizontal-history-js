@@ -3,38 +3,6 @@
     <link rel="stylesheet" type="text/css" href="image.css">
     <script src="image.js"></script>
     <script>
-      function isEl(node) {
-        return node.tagName !== undefined;
-      }
-
-      function cloneTreeWithStyle(node) {
-        // Clode the node
-        var cloneNode = node.cloneNode(false);
-
-        // Clone the computed style info
-        if (isEl(node)) {
-          // Get the effective style for the element
-          var styleInfo = window.getComputedStyle(node, null);
-
-          // Apply the style directly to the cloned element
-          for (var propertyIdx = 0; propertyIdx < styleInfo.length; propertyIdx++) {
-            var property = styleInfo[propertyIdx];
-
-            // Do *NOT* set style info for attributes set directly on the element
-            if (!(property in cloneNode)) {
-              cloneNode.style[property] = styleInfo.getPropertyValue(property);
-            }
-          }
-        }
-
-        // Recur
-        node.childNodes.forEach(function(child, idx) {
-          cloneNode.appendChild(cloneTreeWithStyle(child));
-        });
-
-        return cloneNode;
-      }
-
       window.onload = function () {
         var imageParentEl = document.getElementById('imageDiv');
         window.image = new Image(221, 381, imageParentEl);
@@ -51,19 +19,62 @@
           }
           var category = addBarFormEl.category.value;
 
-          window.image.addBarEl('el' + curColIdx, name, startYr, endYr, category, curColIdx);
+          window.image.addBar('el' + curColIdx, name, startYr, endYr, category);
           curColIdx++;
+        };
+
+        editBarFormEl = document.getElementById('editBarForm');
+        editBarFormEl.onsubmit = function () {
+          var name = editBarFormEl.figureName.value;
+          var startYr = parseInt(editBarFormEl.startYr.value);
+          var endYrStr = editBarFormEl.endYr.value;
+          var endYr = null;
+          if (endYrStr != "") {
+            endYr = parseInt(endYrStr);
+          }
+          var category = editBarFormEl.category.value;
+
+          window.image.selectedBar.update(name, startYr, endYr, category);
         };
 
         var downloadLink = document.getElementById('download');
         downloadLink.onclick = function () {
           downloadLink.href = window.image.getUrl();
         };
+
+        window.image.onselect = function(bar) {
+          var editBarDivEl = document.getElementById("editBarDiv");
+          var editBarFormEl = document.getElementById("editBarForm");
+          if (bar == null) {
+            editBarDivEl.style.display = "none";
+          } else {
+            editBarDivEl.style.display = "inherit";
+
+            editBarFormEl.figureName.value = bar.name;
+            editBarFormEl.startYr.value = bar.startYr;
+            editBarFormEl.endYr.value = bar.endYr;
+            editBarFormEl.category.value = bar.category;
+          }
+        }
       };
     </script>
   </head>
   <body>
     <div id="imageDiv"></div>
+    <br />
+    <div id="editBarDiv" style="display:none">
+      <form id="editBarForm" action="javascript:void(0);">
+        Name: <input id="figureName" type="text" />
+        <br />
+        Start Year: <input id="startYr" type="text" />
+        <br />
+        End Year: <input id="endYr" type="text" />
+        <br />
+        Category: <input id="category" type="text" />
+        <br />
+        <input type="submit" value="Update Bar" />
+      </form>
+    </div>
     <br />
     <form id="addBarForm" action="javascript:void(0);">
       Name: <input id="figureName" type="text" />
@@ -78,6 +89,5 @@
     </form>
     <br />
     <a id='download' download="history.svg" href="javascript:void(0);">Download</a>
-    <canvas />
   </body>
 </html>
