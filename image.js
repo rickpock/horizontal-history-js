@@ -157,10 +157,10 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
       // If we've clicked on the selected bar, unselect it
       if (selected == bar) {
         image.selectBar(null);
-      } else {
-        image.selectBar(bar);
+        return;
       }
     }
+    image.selectBar(bar);
   }
 
   // Generate the text label element
@@ -184,6 +184,15 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
     this.barGEl.setAttribute('transform', "translate(" + x + ", " + y + ")");
   }
+
+  this.select = function() {
+    this.bgRectEl.classList.add('selected-bar');
+    this.image.figuresEl.appendChild(this.barGEl);
+  }
+
+  this.unselect = function() {
+    this.bgRectEl.classList.remove('selected-bar');
+  }
 }
 
 function Image(width, height, parentEl) {
@@ -196,6 +205,7 @@ function Image(width, height, parentEl) {
   this.height = height - 1;
 
   this.bars = [];
+  this.selectedBar = null;
 
   // Methods for labels and other meta content
 
@@ -309,9 +319,6 @@ function Image(width, height, parentEl) {
   }
 
   // Methods to manipulate figure bars
-  
-  updatePosition = function(barEl) {
-  }
 
   /*
   * Assigns appropriate column indices to each bar element.
@@ -361,6 +368,24 @@ function Image(width, height, parentEl) {
       var gEl = bar.parentNode.parentNode;
       gEl.parentNode.appendChild(gEl);
     }
+  }
+
+  this.getSelectedBar = function() {
+    return this.selectedBar;
+  }
+
+  this.selectBar = function(bar) {
+    if (this.selectedBar !== null) {
+      this.selectedBar.unselect();
+    }
+
+    if (bar !== null) {
+      bar.select();
+    }
+
+    this.selectedBar = bar;
+
+    //wrapCall(this.onselect)();
   }
 
   // Default figure background colors to auto-assign
