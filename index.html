@@ -3,38 +3,6 @@
     <link rel="stylesheet" type="text/css" href="image.css">
     <script src="image.js"></script>
     <script>
-      function isEl(node) {
-        return node.tagName !== undefined;
-      }
-
-      function cloneTreeWithStyle(node) {
-        // Clode the node
-        var cloneNode = node.cloneNode(false);
-
-        // Clone the computed style info
-        if (isEl(node)) {
-          // Get the effective style for the element
-          var styleInfo = window.getComputedStyle(node, null);
-
-          // Apply the style directly to the cloned element
-          for (var propertyIdx = 0; propertyIdx < styleInfo.length; propertyIdx++) {
-            var property = styleInfo[propertyIdx];
-
-            // Do *NOT* set style info for attributes set directly on the element
-            if (!(property in cloneNode)) {
-              cloneNode.style[property] = styleInfo.getPropertyValue(property);
-            }
-          }
-        }
-
-        // Recur
-        node.childNodes.forEach(function(child, idx) {
-          cloneNode.appendChild(cloneTreeWithStyle(child));
-        });
-
-        return cloneNode;
-      }
-
       window.onload = function () {
         var imageParentEl = document.getElementById('imageDiv');
         window.image = new Image(221, 381, imageParentEl);

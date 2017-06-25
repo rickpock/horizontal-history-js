@@ -10,17 +10,36 @@ function isEl(node) {
 }
 
 /*
+* Wraps a possibly-null function in a safe-to-call function
+*
+* func: Function to wrap. May be null.
+*
+* Returns: A definitively non-null function.
+*/
+function wrapCall(func) {
+  if (func !== undefined && func !== null) {
+    return func;
+  } else {
+    return function() {};
+  }
+}
+
+/*
 * Clones a DOM node and all its children (recursively) with the
 * effective style applied directly to each element.
 * Used to generate a DOM tree indpendent of CSS.
 *
 * node: Required. Root node to clone.
+* func: Optional. Function to run against each cloned node for additional customization.
 *
 * Returns: DOM node tree with styles applied.
 */
-function cloneTreeWithStyle(node) {
+function cloneTreeWithStyle(node, func) {
   // Clode the node
   var cloneNode = node.cloneNode(false);
+
+  // Run custom logic
+  wrapCall(func)(cloneNode);
 
   // Clone the computed style info
   if (isEl(node)) {
@@ -40,25 +59,10 @@ function cloneTreeWithStyle(node) {
 
   // Recur
   node.childNodes.forEach(function(child, idx) {
-    cloneNode.appendChild(cloneTreeWithStyle(child));
+    cloneNode.appendChild(cloneTreeWithStyle(child, func));
   });
 
   return cloneNode;
-}
-
-/*
-* Wraps a possibly-null function in a safe-to-call function
-*
-* func: Function to wrap. May be null.
-*
-* Returns: A definitively non-null function.
-*/
-function wrapCall(func) {
-  if (func !== undefined && func !== null) {
-    return func;
-  } else {
-    return function() {};
-  }
 }
 
 /*
@@ -525,7 +529,7 @@ function Image(width, height, parentEl) {
   */
   this.getUrl = function() {
     // Create a clone of the image with styles applied directly to the elements
-    var cloneSvgElWithStyle = cloneTreeWithStyle(this.svgEl);
+    var cloneSvgElWithStyle = cloneTreeWithStyle(this.svgEl)
 
     // Serialize the SVG
     var xmlSerializer = new XMLSerializer();
