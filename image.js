@@ -9,6 +9,29 @@ function isEl(node) {
   return node.tagName !== undefined;
 }
 
+function parseColor(color) {
+  var re = /rgb\( *([0-9]*), *([0-9]*), *([0-9]*)\)/
+  var reGroups = re.exec(color);
+
+  // TODO: error handling
+
+  var red = parseInt(reGroups[1]);
+  var green = parseInt(reGroups[2]);
+  var blue = parseInt(reGroups[3]);
+
+  var max = Math.max(red, green, blue);
+  var min = Math.min(red, green, blue);
+
+  var lumosity = (max + min) / 2;
+
+  return {
+    'red': red, 'r': red,
+    'green': green, 'g': green,
+    'blue': blue, 'b': blue,
+    'lumosity': lumosity, 'l': lumosity
+  };
+}
+
 /*
 * Wraps a possibly-null function in a safe-to-call function
 *
@@ -496,8 +519,14 @@ function Image(width, height, parentEl) {
 
     // At this point, the category does not have a color defined. Choose the first available color.
     var nextBgColor = availableBgColors[0];
+    var colorDetail = parseColor(nextBgColor);
+    var nextFgColor = "rgb(0, 0, 0)";
+    if (colorDetail['l'] < 128) {
+      nextFgColor = "rgb(255, 255, 255)";
+    }
 
     this.categoryCss.appendChild(document.createTextNode("rect.category-" + category + "{fill:" + nextBgColor + "}"));
+    this.categoryCss.appendChild(document.createTextNode("text.category-" + category + "{fill:" + nextFgColor + "}"));
   }
 
   /*
