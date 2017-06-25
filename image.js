@@ -104,6 +104,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
   const bar = this;
 
+  var cleanCategory = category.replace(/ /g, '_');
+
   // Handle an endYr of null representing "still alive"
   if (endYr === undefined || endYr === null) {
     this.effectiveEndYr = curYr;
@@ -118,7 +120,7 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
   // Generate the "root" grouping element of the bar svg xml
   var barGAttrs = {
-    'class': 'bar category-' + this.category,
+    'class': 'bar category-' + cleanCategory,
     'startYr': this.startYr, 'endYr': this.endYr,
     'effectiveEndYr': this.effectiveEndYr,
     'colIdx': this.colIdx,
@@ -141,7 +143,7 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
   // Generate the background rectangle element
   var bgRectAttrs = {
-    'class': 'bar category-' + this.category,
+    'class': 'bar category-' + cleanCategory,
     'x': 0, 'y': 0,
     'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
   };
@@ -165,7 +167,7 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
   // Generate the text label element
   var textAttrs = {
-    'class': 'bar category-' + this.category,
+    'class': 'bar category-' + cleanCategory,
     'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
   };
   this.textEl = buildEl('text', textAttrs);
@@ -453,7 +455,8 @@ function Image(width, height, parentEl) {
   * Returns: An svg xml element tree.
   */
   this.addBar = function(id, name, startYr, endYr, category, colIdx) {
-    this.checkCategories(category);
+    var cleanCategory = category.replace(/ /g, '_');
+    this.checkCategories(cleanCategory);
 
     var bar = new Bar(this, id, name, startYr, endYr, category, colIdx);
 
@@ -582,8 +585,6 @@ function Image(width, height, parentEl) {
   this.categoryCss = document.createElement('style');
   this.categoryCss.setAttribute('id', 'categoryCss');
   this.categoryCss.type = 'text/css';
-
-  //this.categoryCss.appendChild(document.createTextNode("rect.category-lightblue{fill:red}"));
 
   document.getElementsByTagName('head')[0].appendChild(this.categoryCss);
 }
