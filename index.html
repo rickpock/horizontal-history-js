@@ -21,6 +21,9 @@
 
           window.image.addBar('el' + curColIdx, name, startYr, endYr, category);
           curColIdx++;
+
+          addBarFormEl.reset();
+          addBarFormEl.figureName.focus();
         };
 
         editBarFormEl = document.getElementById('editBarForm');
