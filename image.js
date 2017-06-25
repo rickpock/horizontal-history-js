@@ -133,9 +133,9 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     this.endYr = endYr;
     this.category = category;
 
-    // TODO: check categories in image
-
     var cleanCategory = category.replace(/ /g, '_');
+
+    this.image.checkCategories(cleanCategory);
 
     // Handle an endYr of null representing "still alive"
     if (endYr === undefined || endYr === null) {
@@ -160,8 +160,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     };
     setAttrs(this.barGEl, barGAttrs);
     this.barGEl.classList.add('bar');
-    this.barGEl.classList.add('category-' + cleanCategory);
     this.barGEl.classList.remove('category-' + oldCategory);
+    this.barGEl.classList.add('category-' + cleanCategory);
 
     var halfWidth = colWidth / 2;
     var halfHeight = height / 2;
@@ -178,8 +178,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     };
     setAttrs(this.bgRectEl, bgRectAttrs);
     this.bgRectEl.classList.add('bar');
-    this.bgRectEl.classList.add('category-' + cleanCategory);
     this.bgRectEl.classList.remove('category-' + oldCategory);
+    this.bgRectEl.classList.add('category-' + cleanCategory);
   
     var textAttrs = {
       'class': 'bar category-' + cleanCategory,
@@ -187,8 +187,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
     };
     setAttrs(this.textEl, textAttrs);
     this.textEl.classList.add('bar');
-    this.textEl.classList.add('category-' + cleanCategory);
     this.textEl.classList.remove('category-' + oldCategory);
+    this.textEl.classList.add('category-' + cleanCategory);
 
     this.textEl.innerHTML = this.name;
 
@@ -510,9 +510,6 @@ function Image(width, height, parentEl) {
   * Returns: An svg xml element tree.
   */
   this.addBar = function(id, name, startYr, endYr, category) {
-    var cleanCategory = category.replace(/ /g, '_');
-    this.checkCategories(cleanCategory);
-
     var bar = new Bar(this, id, name, startYr, endYr, category, 0);
 
     this.bars.push(bar);
