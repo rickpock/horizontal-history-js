@@ -127,6 +127,26 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
   const bar = this;
 
+  this.moveToCol = function(colIdx) {
+    // Update colIdx
+    this.colIdx = colIdx;
+
+    // Update the location
+    var x = this.colIdx * colWidth;
+    var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+    this.barGEl.setAttribute('transform', "translate(" + x + ", " + y + ")");
+  }
+
+  this.select = function() {
+    this.bgRectEl.classList.add('selected-bar');
+    this.image.figuresEl.appendChild(this.barGEl);
+  }
+
+  this.unselect = function() {
+    this.bgRectEl.classList.remove('selected-bar');
+  }
+
   this.update = function (name, startYr, endYr, category) {
     this.name = name;
     this.startYr = startYr;
@@ -192,7 +212,7 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
 
     this.textEl.innerHTML = this.name;
 
-    // TODO: Update columns
+    this.image.assignCols();
   }
 
   // Generate the "root" grouping element of the bar svg xml
@@ -228,28 +248,9 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
   this.textEl.onclick = this.bgRectEl.onclick;
 
   this.image.figuresEl.appendChild(this.barGEl);
+  this.image.bars.push(this);
 
   this.update(name, startYr, endYr, category);
-
-  this.moveToCol = function(colIdx) {
-    // Update colIdx
-    this.colIdx = colIdx;
-
-    // Update the location
-    var x = this.colIdx * colWidth;
-    var y = (indexYr - this.effectiveEndYr) * yrHeight;
-
-    this.barGEl.setAttribute('transform', "translate(" + x + ", " + y + ")");
-  }
-
-  this.select = function() {
-    this.bgRectEl.classList.add('selected-bar');
-    this.image.figuresEl.appendChild(this.barGEl);
-  }
-
-  this.unselect = function() {
-    this.bgRectEl.classList.remove('selected-bar');
-  }
 }
 
 function Image(width, height, parentEl) {
@@ -511,10 +512,6 @@ function Image(width, height, parentEl) {
   */
   this.addBar = function(id, name, startYr, endYr, category) {
     var bar = new Bar(this, id, name, startYr, endYr, category, 0);
-
-    this.bars.push(bar);
-
-    this.assignCols();
 
     return bar;
   }
