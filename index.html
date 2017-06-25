@@ -59,11 +59,21 @@
         downloadLink.onclick = function () {
           downloadLink.href = window.image.getUrl();
         };
+
+        window.image.onselect = function(bar) {
+          if (bar == null) {
+            document.getElementById("selectNote").innerHTML = "Nothing selected.";
+          } else {
+            document.getElementById("selectNote").innerHTML = "Selected: " + bar.name;
+          }
+        }
       };
     </script>
   </head>
   <body>
     <div id="imageDiv"></div>
+    <br />
+    <div id="selectNote"></div>
     <br />
     <form id="addBarForm" action="javascript:void(0);">
       Name: <input id="figureName" type="text" />
