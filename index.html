@@ -21,6 +21,9 @@
 
           window.image.addBar('el' + curColIdx, name, startYr, endYr, category);
           curColIdx++;
+
+          addBarFormEl.reset();
+          addBarFormEl.figureName.focus();
         };
 
         editBarFormEl = document.getElementById('editBarForm');
@@ -47,6 +50,8 @@
           var editBarFormEl = document.getElementById("editBarForm");
           if (bar == null) {
             editBarDivEl.style.display = "none";
+
+            document.getElementById('addBarForm').figureName.focus();
           } else {
             editBarDivEl.style.display = "inherit";
 
@@ -54,6 +59,8 @@
             editBarFormEl.startYr.value = bar.startYr;
             editBarFormEl.endYr.value = bar.endYr;
             editBarFormEl.category.value = bar.category;
+
+            editBarFormEl.figureName.focus();
           }
         }
       };
