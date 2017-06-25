@@ -61,10 +61,17 @@
         };
 
         window.image.onselect = function(bar) {
+          var editDivEl = document.getElementById("editDiv");
+          var editFormEl = document.getElementById("editForm");
           if (bar == null) {
-            document.getElementById("selectNote").innerHTML = "Nothing selected.";
+            editDivEl.style.display = "none";
           } else {
-            document.getElementById("selectNote").innerHTML = "Selected: " + bar.name;
+            editDivEl.style.display = "inherit";
+
+            editFormEl.figureName.value = bar.name;
+            editFormEl.startYr.value = bar.startYr;
+            editFormEl.endYr.value = bar.endYr;
+            editFormEl.category.value = bar.category;
           }
         }
       };
@@ -73,7 +80,19 @@
   <body>
     <div id="imageDiv"></div>
     <br />
-    <div id="selectNote"></div>
+    <div id="editDiv" style="display:none">
+      <form id="editForm" action="javascript:void(0);">
+        Name: <input id="figureName" type="text" />
+        <br />
+        Start Year: <input id="startYr" type="text" />
+        <br />
+        End Year: <input id="endYr" type="text" />
+        <br />
+        Category: <input id="category" type="text" />
+        <br />
+        <input type="submit" value="Update Bar" />
+      </form>
+    </div>
     <br />
     <form id="addBarForm" action="javascript:void(0);">
       Name: <input id="figureName" type="text" />
