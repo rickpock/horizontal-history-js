@@ -47,6 +47,21 @@ function cloneTreeWithStyle(node) {
 }
 
 /*
+* Wraps a possibly-null function in a safe-to-call function
+*
+* func: Function to wrap. May be null.
+*
+* Returns: A definitively non-null function.
+*/
+function wrapCall(func) {
+  if (func !== undefined && func !== null) {
+    return func;
+  } else {
+    return function() {};
+  }
+}
+
+/*
 * Determines the decade in which a year belongs.
 * A decade is defined as an integer of all the digits in a year except the one's digit.
 * For example, the decade for 1945 is 194.
@@ -387,7 +402,7 @@ function Image(width, height, parentEl) {
 
     this.selectedBar = bar;
 
-    //wrapCall(this.onselect)();
+    wrapCall(this.onselect)(bar);
   }
 
   // Default figure background colors to auto-assign
