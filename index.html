@@ -51,8 +51,22 @@
           }
           var category = addBarFormEl.category.value;
 
-          window.image.addBar('el' + curColIdx, name, startYr, endYr, category, curColIdx);
+          window.image.addBar('el' + curColIdx, name, startYr, endYr, category);
           curColIdx++;
+        };
+
+        editBarFormEl = document.getElementById('editBarForm');
+        editBarFormEl.onsubmit = function () {
+          var name = editBarFormEl.figureName.value;
+          var startYr = parseInt(editBarFormEl.startYr.value);
+          var endYrStr = editBarFormEl.endYr.value;
+          var endYr = null;
+          if (endYrStr != "") {
+            endYr = parseInt(endYrStr);
+          }
+          var category = editBarFormEl.category.value;
+
+          window.image.selectedBar.update(name, startYr, endYr, category);
         };
 
         var downloadLink = document.getElementById('download');
@@ -61,17 +75,17 @@
         };
 
         window.image.onselect = function(bar) {
-          var editDivEl = document.getElementById("editDiv");
-          var editFormEl = document.getElementById("editForm");
+          var editBarDivEl = document.getElementById("editBarDiv");
+          var editBarFormEl = document.getElementById("editBarForm");
           if (bar == null) {
-            editDivEl.style.display = "none";
+            editBarDivEl.style.display = "none";
           } else {
-            editDivEl.style.display = "inherit";
+            editBarDivEl.style.display = "inherit";
 
-            editFormEl.figureName.value = bar.name;
-            editFormEl.startYr.value = bar.startYr;
-            editFormEl.endYr.value = bar.endYr;
-            editFormEl.category.value = bar.category;
+            editBarFormEl.figureName.value = bar.name;
+            editBarFormEl.startYr.value = bar.startYr;
+            editBarFormEl.endYr.value = bar.endYr;
+            editBarFormEl.category.value = bar.category;
           }
         }
       };
@@ -80,8 +94,8 @@
   <body>
     <div id="imageDiv"></div>
     <br />
-    <div id="editDiv" style="display:none">
-      <form id="editForm" action="javascript:void(0);">
+    <div id="editBarDiv" style="display:none">
+      <form id="editBarForm" action="javascript:void(0);">
         Name: <input id="figureName" type="text" />
         <br />
         Start Year: <input id="startYr" type="text" />

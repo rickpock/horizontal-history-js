@@ -87,6 +87,20 @@ const decadeWidth = 60;
 const colWidth = 30;
 
 /*
+* Generically adds attributes to an element.
+* 
+* el:   Required. Reference to the element.
+* attr: Required. An JS object of attribute values to be added to the element.
+* 
+* Returns nothing
+*/
+setAttrs = function (el, attrs) {
+  for (var key in attrs) {
+    el.setAttribute(key, attrs[key]);
+  }
+}
+
+/*
 * Generically generates an xml element.
 * This is designed to be used to create elements to add to the svg.
 * The element is _not_ added to any DOM by this function.
@@ -99,9 +113,7 @@ const colWidth = 30;
 */
 buildEl = function (name, attrs, id) {
   var el = document.createElementNS("http://www.w3.org/2000/svg", name);
-  for (var key in attrs) {
-    el.setAttribute(key, attrs[key]);
-  }
+  setAttrs(el, attrs);
 
   if (id !== undefined) el.setAttribute('id', id);
 
@@ -111,58 +123,87 @@ buildEl = function (name, attrs, id) {
 function Bar(image, id, name, startYr, endYr, category, colIdx) {
   this.image = image;
   this.id = id;
-  this.name = name;
-  this.startYr = startYr;
-  this.endYr = endYr;
-  this.category = category;
   this.colIdx = colIdx;
 
   const bar = this;
 
-  var cleanCategory = category.replace(/ /g, '_');
+  this.update = function (name, startYr, endYr, category) {
+    this.name = name;
+    this.startYr = startYr;
+    this.endYr = endYr;
+    this.category = category;
 
-  // Handle an endYr of null representing "still alive"
-  if (endYr === undefined || endYr === null) {
-    this.effectiveEndYr = curYr;
-  } else {
-    this.effectiveEndYr = endYr;
+    // TODO: check categories in image
+
+    var cleanCategory = category.replace(/ /g, '_');
+
+    // Handle an endYr of null representing "still alive"
+    if (endYr === undefined || endYr === null) {
+      this.effectiveEndYr = curYr;
+    } else {
+      this.effectiveEndYr = endYr;
+    }
+  
+    // Determine the dimensions and location of the bar
+    var x = this.colIdx * colWidth;
+    var height = (this.effectiveEndYr - this.startYr) * yrHeight;
+    var y = (indexYr - this.effectiveEndYr) * yrHeight;
+
+    var oldCategory = this.barGEl.getAttribute('category');
+
+    var barGAttrs = {
+      'startYr': this.startYr, 'endYr': this.endYr,
+      'effectiveEndYr': this.effectiveEndYr,
+      'colIdx': this.colIdx,
+      'category': this.category,
+      'transform': "translate(" + x + ", " + y + ")"
+    };
+    setAttrs(this.barGEl, barGAttrs);
+    this.barGEl.classList.add('bar');
+    this.barGEl.classList.add('category-' + cleanCategory);
+    this.barGEl.classList.remove('category-' + oldCategory);
+
+    var halfWidth = colWidth / 2;
+    var halfHeight = height / 2;
+    var groupingTransforms = [
+      "translate(" + halfWidth + ", " + -halfHeight + ")",
+      "rotate(90)",
+      "translate(" + halfHeight + ", " + -halfWidth + ")"
+    ];
+    setAttrs(this.rotateGEl, {'transform': groupingTransforms.join(' ')});
+
+    var bgRectAttrs = {
+      'x': 0, 'y': 0,
+      'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+    };
+    setAttrs(this.bgRectEl, bgRectAttrs);
+    this.bgRectEl.classList.add('bar');
+    this.bgRectEl.classList.add('category-' + cleanCategory);
+    this.bgRectEl.classList.remove('category-' + oldCategory);
+  
+    var textAttrs = {
+      'class': 'bar category-' + cleanCategory,
+      'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
+    };
+    setAttrs(this.textEl, textAttrs);
+    this.textEl.classList.add('bar');
+    this.textEl.classList.add('category-' + cleanCategory);
+    this.textEl.classList.remove('category-' + oldCategory);
+
+    this.textEl.innerHTML = this.name;
+
+    // TODO: Update columns
   }
 
-  // Determine the dimensions and location of the bar
-  var x = this.colIdx * colWidth;
-  var height = (this.effectiveEndYr - this.startYr) * yrHeight;
-  var y = (indexYr - this.effectiveEndYr) * yrHeight;
-
   // Generate the "root" grouping element of the bar svg xml
-  var barGAttrs = {
-    'class': 'bar category-' + cleanCategory,
-    'startYr': this.startYr, 'endYr': this.endYr,
-    'effectiveEndYr': this.effectiveEndYr,
-    'colIdx': this.colIdx,
-    'category': this.category,
-    'transform': "translate(" + x + ", " + y + ")"
-  };
-  this.barGEl = buildEl('g', barGAttrs, id);
+  this.barGEl = buildEl('g', {}, id);
 
   // Generate the grouping element used to apply the rotation tranformation
-  var halfWidth = colWidth / 2;
-  var halfHeight = height / 2;
-  var groupingTransforms = [
-    "translate(" + halfWidth + ", " + -halfHeight + ")",
-    "rotate(90)",
-    "translate(" + halfHeight + ", " + -halfWidth + ")"
-  ];
-  
-  this.rotateGEl = buildEl('g', {'transform': groupingTransforms.join(" ")});
+  this.rotateGEl = buildEl('g', {});
   this.barGEl.appendChild(this.rotateGEl);
 
   // Generate the background rectangle element
-  var bgRectAttrs = {
-    'class': 'bar category-' + cleanCategory,
-    'x': 0, 'y': 0,
-    'width': height, 'height': colWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-  };
-  this.bgRectEl = buildEl('rect', bgRectAttrs);
+  this.bgRectEl = buildEl('rect', {});
   this.rotateGEl.appendChild(this.bgRectEl);
 
   // Add event handling to the background rectangle element
@@ -181,17 +222,14 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
   }
 
   // Generate the text label element
-  var textAttrs = {
-    'class': 'bar category-' + cleanCategory,
-    'x': halfHeight, 'y': halfWidth // Yes, this looks backwards, but that's because the rotate(90) transform is being applied
-  };
-  this.textEl = buildEl('text', textAttrs);
-  this.textEl.innerHTML = this.name;
+  this.textEl = buildEl('text', {});
   this.rotateGEl.appendChild(this.textEl);
 
   this.textEl.onclick = this.bgRectEl.onclick;
 
   this.image.figuresEl.appendChild(this.barGEl);
+
+  this.update(name, startYr, endYr, category);
 
   this.moveToCol = function(colIdx) {
     // Update colIdx
@@ -471,11 +509,11 @@ function Image(width, height, parentEl) {
   * 
   * Returns: An svg xml element tree.
   */
-  this.addBar = function(id, name, startYr, endYr, category, colIdx) {
+  this.addBar = function(id, name, startYr, endYr, category) {
     var cleanCategory = category.replace(/ /g, '_');
     this.checkCategories(cleanCategory);
 
-    var bar = new Bar(this, id, name, startYr, endYr, category, colIdx);
+    var bar = new Bar(this, id, name, startYr, endYr, category, 0);
 
     this.bars.push(bar);
 
