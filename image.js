@@ -189,6 +189,8 @@ function Bar(image, id, name, startYr, endYr, category, colIdx) {
   this.textEl.innerHTML = this.name;
   this.rotateGEl.appendChild(this.textEl);
 
+  this.textEl.onclick = this.bgRectEl.onclick;
+
   this.image.figuresEl.appendChild(this.barGEl);
 
   this.moveToCol = function(colIdx) {
