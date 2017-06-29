@@ -408,7 +408,7 @@ function Image(width, height, parentEl) {
   /*
   * Assigns appropriate column indices to each bar element.
   * 
-  * Side Effect: Reassigns 'colIdx' and 'transform' attributes on each bar element.
+  * Side Effect: Reassigns 'colIdx' and 'transform' attributes on each bar element. Resizes the image to accomodate the number of columns.
   *
   * Returns: Nothing
   */
@@ -445,6 +445,9 @@ function Image(width, height, parentEl) {
       var x = colIdx * colWidth;
       var y = (indexYr - effectiveEndYr) * yrHeight;
     });
+
+	// Resize the image width to fit all of the columns plus a blank column
+	this.updateSize(decadeWidth + colWidth * (colsAvailYr.length + 1), this.height);
 
     // Move the selected bars (if any) to the foreground
     var selected = document.getElementsByClassName('selected-bar');
@@ -597,8 +600,8 @@ function Image(width, height, parentEl) {
     // Root svg element
     this.svgEl = buildEl("svg", {
       'version': '1.1',
-      'width': width,
-      'height': height,
+      'width': this.width,
+      'height': this.height,
       'viewbox': '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight
     }, 'image');
   
@@ -648,9 +651,32 @@ function Image(width, height, parentEl) {
     this.borderEl = buildEl('rect', {
       'class': 'border',
       'x': 0, 'y': 0,
-      'width': width, 'height': height
+      'width': this.width, 'height': this.height
     });
     this.svgEl.appendChild(this.borderEl);
+  }
+
+  this.updateSize = function(width, height) {
+	this.outerWidth = width;
+	this.outerHeight = height;
+	this.width = width - 1;
+	this.height = height - 1;
+
+	this.svgEl.setAttribute('width', this.width);
+	this.svgEl.setAttribute('height', this.height);
+	this.svgEl.setAttribute('viewbox', '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight);
+
+	this.bgEl.setAttribute('width', this.width);
+	this.bgEl.setAttribute('height', this.height);
+	
+    var yrsIntoDecade = curYr - (curDecade * 10);
+    var yrsLeftInDecade = 10 - yrsIntoDecade;
+
+	this.futureEl.setAttribute('width', this.width - decadeWidth);
+	this.futureEl.setAttribute('height', yrsLeftInDecade * decadeHeight / 10);
+
+	this.borderEl.setAttribute('width', this.width);
+	this.borderEl.setAttribute('height', this.height);
   }
 
   this.initSvg();
