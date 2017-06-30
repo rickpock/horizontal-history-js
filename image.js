@@ -362,6 +362,75 @@ function Image(width, height, parentEl) {
   }
 
   /*
+  * "Scrolls" the image forward or backwards in time
+  *
+  * Side Effect: Updates the Y-transform of the decadeOffsetEl by "offsetDelta". It will not scroll forwards in time past the end of the current decade.
+  *
+  * offsetDelta: The relative amount to scroll the image. Negative is backwards in time. Positive is forwards in time.
+  *
+  * Returns: Nothing.
+  */
+  this.updateOffset = function (offsetDelta) {
+    this.setOffset(parseInt(this.decadeOffsetEl.getAttribute("offset")) + offsetDelta);
+  }
+
+  /*
+  * "Scrolls" the image to a specific point in time
+  *
+  * Side Effect: Updates the Y-transform of the decadeOffsetEl to "offset". It will not scroll forwards in time past the end of the current decade.
+  *
+  * offset: The absolute amount to scroll the image. Negative is backwards in time. Positive is forwards in time.
+  *
+  * Returns: Nothing.
+  */
+  this.setOffset = function (offset) {
+    // Don't allow scrolling into the future
+    if (offset > 0) {
+      offset = 0;
+    }
+
+    // Update the vertical offset for the whole image
+    this.decadeOffsetEl.setAttribute("offset", offset);
+    this.decadeOffsetEl.setAttribute("transform", "translate(0, " + offset + ")");
+
+    this.updateDecadeLabels();
+  }
+
+  /*
+  * Generates new decade labels, as needed
+  *
+  * Side Effect: Adds new decade labels to the DOM
+  *
+  * Returns: Nothing.
+  */
+  this.updateDecadeLabels = function() {
+    // Determine the startDecade (aka. the furthest decade back in history that is visible on the image)
+    var visibleY = this.height - parseInt(this.decadeOffsetEl.getAttribute('offset'));
+    var decadeCount = Math.ceil(visibleY / decadeHeight);
+    var endDecade = parseInt(this.decadesEl.getAttribute('end'));
+    var startDecade = endDecade - decadeCount + 1;
+
+    // Determine the previous start decade (The furthest decade back in history that already has a label)
+    if (this.decadesEl.getAttribute('start') === null) {
+      // If no previous start decade is set, we want to generate all decades up to and including the endDecade
+      var prevStartDecade = endDecade + 1;
+    } else {
+      var prevStartDecade = parseInt(this.decadesEl.getAttribute('start'));
+    }
+
+    // Generate all decade labels and add them to the DOM
+    for (var decade = startDecade; decade < prevStartDecade; decade++) {
+      var decadeEl = buildDecadeEl(decade * 10);
+  
+      this.decadesEl.appendChild(decadeEl);
+
+      if (decade % 10 == 0) {
+        this.addCenturyEl(decade * 10);
+      }
+    }
+  }
+
+  /*
   * Adds decade labels to the svg DOM.
   * 
   * Side Effect: Mutates the DOM of the element with id 'decades'.
@@ -371,10 +440,10 @@ function Image(width, height, parentEl) {
   * 
   * Returns: Nothing.
   */
-  this.addDecadeEls = function (startYr, endYr) {
+  this.addDecadeEls = function () {
     // Clear existing decades
     var oldDecadesEl = this.decadesEl;
-    this.decadesEl = buildEl('g', {}, 'decades');
+    this.decadesEl = buildEl('g', {'end': curDecade}, 'decades');
     this.decadeOffsetEl.replaceChild(this.decadesEl, oldDecadesEl);
 
     // Clear existing centuries
@@ -382,25 +451,11 @@ function Image(width, height, parentEl) {
     this.centuriesEl = buildEl('g', {}, 'centuries');
     this.decadeOffsetEl.replaceChild(this.centuriesEl, oldCenturiesEl);
 
-    // Determine the earliest and latest decades
-    var startDecade = getDecadeForYr(startYr);
-    var endDecade = getDecadeForYr(endYr);
-  
-    // Generate all decade labels and add them to the DOM
-    for (var decade = startDecade; decade <= endDecade; decade++) {
-      var decadeEl = buildDecadeEl(decade * 10);
-  
-      this.decadesEl.appendChild(decadeEl);
+    // Start at the current decade
+    this.setOffset(0);
 
-      if (decade % 10 == 0) {
-        this.addCenturyEl(decade * 10);
-      }
-    }
-  
-    // Shift all elements up based on the end decade
-    var offsetY = (endDecade - curDecade) * decadeHeight;
-  
-    this.decadeOffsetEl.setAttribute("transform", "translate(0, " + offsetY + ")");
+    // Generate visible decade labels
+    this.updateDecadeLabels();
   }
 
   // Methods to manipulate figure bars
@@ -597,6 +652,8 @@ function Image(width, height, parentEl) {
   * Returns: Nothing.
   */
   this.initSvg = function () {
+    image = this;
+
     // Root svg element
     this.svgEl = buildEl("svg", {
       'version': '1.1',
@@ -604,6 +661,9 @@ function Image(width, height, parentEl) {
       'height': this.height,
       'viewbox': '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight
     }, 'image');
+    this.svgEl.onwheel = function(wheelEvent) {
+      image.updateOffset(wheelEvent['wheelDeltaY']);
+    }
   
     // Background rectangle element
     this.bgEl = buildEl('rect', {
@@ -656,32 +716,42 @@ function Image(width, height, parentEl) {
     this.svgEl.appendChild(this.borderEl);
   }
 
+  /*
+  * Resizes the image
+  *
+  * Side Effect: Changes the width and height of the svg and all relevant child tags.
+  *
+  * width:  New image width
+  * height: New image height
+  *
+  * Returns: nothing.
+  */
   this.updateSize = function(width, height) {
-	this.outerWidth = width;
-	this.outerHeight = height;
-	this.width = width - 1;
-	this.height = height - 1;
-
-	this.svgEl.setAttribute('width', this.width);
-	this.svgEl.setAttribute('height', this.height);
-	this.svgEl.setAttribute('viewbox', '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight);
-
-	this.bgEl.setAttribute('width', this.width);
-	this.bgEl.setAttribute('height', this.height);
-	
-    var yrsIntoDecade = curYr - (curDecade * 10);
-    var yrsLeftInDecade = 10 - yrsIntoDecade;
-
-	this.futureEl.setAttribute('width', this.width - decadeWidth);
-	this.futureEl.setAttribute('height', yrsLeftInDecade * decadeHeight / 10);
-
-	this.borderEl.setAttribute('width', this.width);
-	this.borderEl.setAttribute('height', this.height);
+    this.outerWidth = width;
+    this.outerHeight = height;
+    this.width = width - 1;
+    this.height = height - 1;
+    
+    this.svgEl.setAttribute('width', this.width);
+    this.svgEl.setAttribute('height', this.height);
+    this.svgEl.setAttribute('viewbox', '-0.5 -0.5 ' + this.outerWidth + ' ' + this.outerHeight);
+    
+    this.bgEl.setAttribute('width', this.width);
+    this.bgEl.setAttribute('height', this.height);
+    
+      var yrsIntoDecade = curYr - (curDecade * 10);
+      var yrsLeftInDecade = 10 - yrsIntoDecade;
+    
+    this.futureEl.setAttribute('width', this.width - decadeWidth);
+    this.futureEl.setAttribute('height', yrsLeftInDecade * decadeHeight / 10);
+    
+    this.borderEl.setAttribute('width', this.width);
+    this.borderEl.setAttribute('height', this.height);
   }
 
   this.initSvg();
 
-  this.addDecadeEls(1888, curYr);
+  this.addDecadeEls();
 
   // If parentEl is passed in, automatically add the svg element to it as a child
   if (parentEl !== undefined) {
