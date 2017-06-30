@@ -428,6 +428,9 @@ function Image(width, height, parentEl) {
         this.addCenturyEl(decade * 10);
       }
     }
+
+    // Update the record of the previous start decade
+    this.decadesEl.setAttribute('start', Math.min(startDecade, prevStartDecade));
   }
 
   /*
