@@ -7,6 +7,15 @@
         var imageParentEl = document.getElementById('imageDiv');
         window.image = new Image(221, 381, imageParentEl);
 
+        // Resize the svg if the surrounding div resizes
+        // There is no 'onresize' for individual div elements, so we have to listen for a change to the style
+        addObserver(imageParentEl, 'style', function (mutationRecord) {
+          var style = window.getComputedStyle(imageParentEl, null);
+          var heightString = style.getPropertyValue('height');
+          var height = parseInt(heightString.replace(/a-zA-Z/g, ''));
+          window.image.updateSize(window.image.outerWidth, height);
+        });
+
         var curColIdx = 0
         addBarFormEl = document.getElementById('addBarForm');
         addBarFormEl.onsubmit = function () {
@@ -67,7 +76,7 @@
     </script>
   </head>
   <body>
-    <div id="imageDiv"></div>
+    <div id="imageDiv" style='resize:both; overflow:auto'></div>
     <br />
     <div id="editBarDiv" style="display:none">
       <form id="editBarForm" action="javascript:void(0);">
