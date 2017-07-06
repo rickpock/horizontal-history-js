@@ -48,6 +48,26 @@ function wrapCall(func) {
 }
 
 /*
+* Adds an 'observer' to run a callback method when the target element has an attribute change
+*
+* target:    Element for which we're detecting a change.
+* attribute: The attribute on target we're listening for.
+*
+* Side Effect: callback is called.
+*
+* Returns: Nothing
+*/
+function addObserver(target, attribute, callback) {
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function (mutationRecord) {
+      wrapCall(callback)(mutationRecord);
+    });
+  });
+
+  observer.observe(target, { attributes : true, attributeFilter : [attribute] });
+}
+
+/*
 * Clones a DOM node and all its children (recursively) with the
 * effective style applied directly to each element.
 * Used to generate a DOM tree indpendent of CSS.
@@ -750,6 +770,8 @@ function Image(width, height, parentEl) {
     
     this.borderEl.setAttribute('width', this.width);
     this.borderEl.setAttribute('height', this.height);
+
+    this.updateDecadeLabels();
   }
 
   this.initSvg();
